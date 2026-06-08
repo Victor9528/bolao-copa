@@ -7,6 +7,7 @@
 3. Paste and run `supabase/migrations/001_initial_schema.sql`.
 4. Paste and run `supabase/migrations/002_scoring_and_permissions.sql`.
 5. Paste and run `supabase/migrations/003_sync_runs.sql`.
+6. Paste and run `supabase/migrations/004_lock_sync_runs.sql`.
 
 ## Auth Settings
 
