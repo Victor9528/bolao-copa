@@ -29,7 +29,7 @@ app.post('/admin/sync-matches', async (req, res) => {
   }
 
   try {
-    const result = await syncMatches();
+    const result = await syncMatches({ force: req.query.force === 'true' });
     res.json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown sync error';

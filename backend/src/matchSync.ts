@@ -67,10 +67,23 @@ type MatchRow = {
   counts_for_pool: boolean;
 };
 
+type SyncMatchesOptions = {
+  force?: boolean;
+};
+
 const finishedStatuses = new Set(['FT', 'AET', 'PEN']);
 const liveStatuses = new Set(['1H', 'HT', '2H', 'ET', 'BT', 'P', 'SUSP', 'INT', 'LIVE']);
 const footballDataFinishedStatuses = new Set(['FINISHED']);
 const footballDataLiveStatuses = new Set(['IN_PLAY', 'PAUSED']);
+
+function getSyncCooldownMinutes() {
+  const configuredValue = Number(process.env.SYNC_COOLDOWN_MINUTES || 60);
+  return Number.isFinite(configuredValue) && configuredValue >= 0 ? configuredValue : 60;
+}
+
+function getCooldownUntil(startedAt: string, cooldownMinutes: number) {
+  return new Date(new Date(startedAt).getTime() + cooldownMinutes * 60_000);
+}
 
 function toMatchStatus(apiStatus: string): MatchRow['status'] {
   if (finishedStatuses.has(apiStatus)) return 'finished';
@@ -214,8 +227,59 @@ async function fetchFootballDataMatches() {
   return mapFootballDataMatches(payload.matches);
 }
 
-export async function syncMatches() {
+export async function syncMatches(options: SyncMatchesOptions = {}) {
   const provider = process.env.FOOTBALL_API_PROVIDER || 'api-football';
+  const supabase = createSupabaseAdminClient();
+  const cooldownMinutes = getSyncCooldownMinutes();
+
+  if (!options.force && cooldownMinutes > 0) {
+    const { data: latestRun, error: latestRunError } = await supabase
+      .from('sync_runs')
+      .select('started_at, synced_count')
+      .eq('provider', provider)
+      .eq('status', 'success')
+      .order('started_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (latestRunError) {
+      throw new Error(`Supabase sync_runs lookup failed: ${latestRunError.message}`);
+    }
+
+    if (latestRun) {
+      const cooldownUntil = getCooldownUntil(latestRun.started_at, cooldownMinutes);
+
+      if (cooldownUntil > new Date()) {
+        await supabase.from('sync_runs').insert({
+          provider,
+          status: 'skipped',
+          synced_count: 0,
+          error_message: `Cooldown active until ${cooldownUntil.toISOString()}`,
+          finished_at: new Date().toISOString(),
+        });
+
+        return {
+          synced: 0,
+          skipped: true,
+          reason: 'cooldown_active',
+          cooldownUntil: cooldownUntil.toISOString(),
+          previousSynced: latestRun.synced_count,
+        };
+      }
+    }
+  }
+
+  const { data: syncRun, error: syncRunError } = await supabase
+    .from('sync_runs')
+    .insert({ provider, status: 'started' })
+    .select('id')
+    .single();
+
+  if (syncRunError) {
+    throw new Error(`Supabase sync_runs insert failed: ${syncRunError.message}`);
+  }
+
+  try {
   const matches = provider === 'football-data'
     ? await fetchFootballDataMatches()
     : provider === 'api-football'
@@ -225,10 +289,14 @@ export async function syncMatches() {
   if (!matches) {
     throw new Error(`Unsupported FOOTBALL_API_PROVIDER: ${provider}`);
   }
-  const supabase = createSupabaseAdminClient();
 
   if (matches.length === 0) {
-    return { synced: 0 };
+    await supabase
+      .from('sync_runs')
+      .update({ status: 'success', synced_count: 0, finished_at: new Date().toISOString() })
+      .eq('id', syncRun.id);
+
+    return { synced: 0, skipped: false };
   }
 
   const { error } = await supabase
@@ -239,5 +307,20 @@ export async function syncMatches() {
     throw new Error(`Supabase match upsert failed: ${error.message}`);
   }
 
-  return { synced: matches.length };
+    await supabase
+      .from('sync_runs')
+      .update({ status: 'success', synced_count: matches.length, finished_at: new Date().toISOString() })
+      .eq('id', syncRun.id);
+
+    return { synced: matches.length, skipped: false };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown sync error';
+
+    await supabase
+      .from('sync_runs')
+      .update({ status: 'failed', error_message: message, finished_at: new Date().toISOString() })
+      .eq('id', syncRun.id);
+
+    throw error;
+  }
 }

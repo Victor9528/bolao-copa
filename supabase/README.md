@@ -6,6 +6,7 @@
 2. Go to SQL Editor.
 3. Paste and run `supabase/migrations/001_initial_schema.sql`.
 4. Paste and run `supabase/migrations/002_scoring_and_permissions.sql`.
+5. Paste and run `supabase/migrations/003_sync_runs.sql`.
 
 ## Auth Settings
 
@@ -58,5 +59,13 @@ Required backend env vars:
 - `FOOTBALL_API_PROVIDER=football-data`
 - `FOOTBALL_DATA_API_KEY`
 - `FOOTBALL_DATA_COMPETITION=WC`
+- `SYNC_COOLDOWN_MINUTES=60` optional, defaults to 60
 
 Do not expose `SUPABASE_SERVICE_ROLE_KEY`, `SYNC_SECRET`, or football API keys in the frontend.
+
+The sync endpoint has a cooldown to avoid unnecessary external API usage. To force a sync intentionally, call:
+
+```http
+POST /admin/sync-matches?force=true
+x-sync-secret: your-sync-secret
+```
