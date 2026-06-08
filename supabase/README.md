@@ -40,3 +40,23 @@
 Match creation and score updates are intentionally not allowed from the frontend. They should be inserted manually in Supabase, by a backend job, or by a trusted integration.
 
 When match scores are updated in `matches`, prediction points for that match are recalculated automatically.
+
+## Match Sync Backend
+
+The backend has a protected endpoint to sync fixtures/results from API-Football into `matches`:
+
+```http
+POST /admin/sync-matches
+x-sync-secret: your-sync-secret
+```
+
+Required backend env vars:
+
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `SYNC_SECRET`
+- `FOOTBALL_API_KEY`
+- `FOOTBALL_LEAGUE_ID`
+- `FOOTBALL_SEASON`
+
+Do not expose `SUPABASE_SERVICE_ROLE_KEY`, `SYNC_SECRET`, or `FOOTBALL_API_KEY` in the frontend.
