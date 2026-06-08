@@ -5,6 +5,7 @@ import { isSupabaseConfigured, supabase } from '../lib/supabase'
 
 export function Register() {
   const { session } = useAuth()
+  const [displayName, setDisplayName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -19,7 +20,15 @@ export function Register() {
     setLoading(true)
     setMessage('')
 
-    const { error } = await supabase.auth.signUp({ email, password })
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          display_name: displayName,
+        },
+      },
+    })
 
     setLoading(false)
 
@@ -45,6 +54,18 @@ export function Register() {
         )}
 
         <form onSubmit={handleSubmit} className="auth-form">
+          <label>
+            Nome no ranking
+            <input
+              type="text"
+              value={displayName}
+              onChange={(event) => setDisplayName(event.target.value)}
+              placeholder="Seu nome ou apelido"
+              minLength={2}
+              required
+            />
+          </label>
+
           <label>
             Email
             <input
