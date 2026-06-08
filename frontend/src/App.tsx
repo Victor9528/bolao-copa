@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { Dashboard } from './pages/Dashboard'
 import { Login } from './pages/Login'
+import { Matches } from './pages/Matches'
 import { Register } from './pages/Register'
 import './App.css'
 
@@ -13,6 +14,7 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route element={<ProtectedRoute />}>
           <Route path="/" element={<Dashboard />} />
+          <Route path="/jogos" element={<Matches />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

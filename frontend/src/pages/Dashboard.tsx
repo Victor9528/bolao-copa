@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/useAuth'
 import { supabase } from '../lib/supabase'
 
@@ -115,6 +116,9 @@ export function Dashboard() {
           <span>01</span>
           <h2>Jogos da Copa</h2>
           <p>{data?.matchesCount ? 'Jogos prontos para receber palpites.' : 'Nenhum jogo cadastrado ainda.'}</p>
+          <Link className="card-link" to="/jogos">
+            Ver jogos
+          </Link>
         </article>
         <article>
           <span>02</span>
