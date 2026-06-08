@@ -48,9 +48,9 @@ Requisitos obrigatórios para o MVP (entrega até 10/jun).
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | Phase 1 | Pending |
-| AUTH-02 | Phase 1 | Pending |
-| AUTH-03 | Phase 1 | Pending |
+| AUTH-01 | Phase 1 | Done |
+| AUTH-02 | Phase 1 | Done |
+| AUTH-03 | Phase 1 | Done |
 | CORE-01 | Phase 2 | Pending |
 | CORE-02 | Phase 2 | Pending |
 | BOL-01 | Phase 3 | Pending |
@@ -60,9 +60,9 @@ Requisitos obrigatórios para o MVP (entrega até 10/jun).
 | RANK-01 | Phase 4 | Pending |
 | RANK-02 | Phase 4 | Pending |
 | TECH-01 | Phase 4 | Pending |
-| TECH-02 | Phase 1 | Pending |
-| TECH-03 | Phase 1 | Pending |
-| TECH-04 | Phase 1 | Pending |
+| TECH-02 | Phase 1 | Done |
+| TECH-03 | Phase 1 | Done |
+| TECH-04 | Phase 1 | Done |
 
 **Coverage:**
 - v1 requirements: 15 total

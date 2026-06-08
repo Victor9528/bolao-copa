@@ -24,8 +24,8 @@ O projeto será desenvolvido em 4 fases rápidas para atingir a entrega final ex
 **Plans**: 2 plans
 
 Plans:
-- [ ] 01-01: Infraestrutura Base (Vite, Node, Supabase SDK)
-- [ ] 01-02: Autenticação de Usuários (Telas e Contexto)
+- [x] 01-01: Infraestrutura Base (Vite, Node, Supabase SDK)
+- [x] 01-02: Autenticação de Usuários (Telas e Contexto)
 
 ### Phase 2: Integração de Jogos da Copa
 **Goal**: Aplicação consome API real e exibe os jogos corretamente.
@@ -72,7 +72,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Setup Base e Autenticação | 0/2 | Not started | - |
+| 1. Setup Base e Autenticação | 2/2 | Complete | 2026-06-08 |
 | 2. Integração de Jogos da Copa | 0/1 | Not started | - |
 | 3. Motor do Bolão | 0/1 | Not started | - |
 | 4. Ranking e Lançamento | 0/1 | Not started | - |
