@@ -1,3 +1,4 @@
+import https from 'node:https';
 import { createSupabaseAdminClient } from './supabase';
 
 type ApiFootballFixture = {
@@ -32,10 +33,14 @@ type FootballDataMatch = {
   utcDate: string;
   status: string;
   homeTeam: {
-    name: string;
+    name: string | null;
+    shortName?: string | null;
+    tla?: string | null;
   };
   awayTeam: {
-    name: string;
+    name: string | null;
+    shortName?: string | null;
+    tla?: string | null;
   };
   score: {
     fullTime: {
@@ -114,8 +119,8 @@ function mapFootballDataMatches(matches: FootballDataMatch[]): MatchRow[] {
     .sort((a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime())
     .map((match, index) => ({
       external_id: String(match.id),
-      home_team: match.homeTeam.name,
-      away_team: match.awayTeam.name,
+      home_team: match.homeTeam.name || match.homeTeam.shortName || match.homeTeam.tla || 'A definir (mandante)',
+      away_team: match.awayTeam.name || match.awayTeam.shortName || match.awayTeam.tla || 'A definir (visitante)',
       home_score: match.score.fullTime.home,
       away_score: match.score.fullTime.away,
       starts_at: match.utcDate,
@@ -157,6 +162,34 @@ async function fetchApiFootballFixtures() {
   return mapApiFootballFixtures(payload.response);
 }
 
+function getJsonWithHttps<T>(url: URL, headers: Record<string, string>) {
+  return new Promise<T>((resolve, reject) => {
+    const request = https.request(url, { headers }, (response) => {
+      let body = '';
+
+      response.on('data', (chunk) => {
+        body += chunk;
+      });
+
+      response.on('end', () => {
+        if (!response.statusCode || response.statusCode < 200 || response.statusCode >= 300) {
+          reject(new Error(`Football-Data request failed with status ${response.statusCode}: ${body}`));
+          return;
+        }
+
+        try {
+          resolve(JSON.parse(body) as T);
+        } catch (error) {
+          reject(error);
+        }
+      });
+    });
+
+    request.on('error', reject);
+    request.end();
+  });
+}
+
 async function fetchFootballDataMatches() {
   const apiBaseUrl = process.env.FOOTBALL_DATA_API_BASE_URL || 'https://api.football-data.org/v4';
   const apiKey = process.env.FOOTBALL_DATA_API_KEY || process.env.FOOTBALL_API_KEY;
@@ -166,20 +199,13 @@ async function fetchFootballDataMatches() {
     throw new Error('Missing FOOTBALL_DATA_API_KEY');
   }
 
-  const url = new URL(`/competitions/${competition}/matches`, apiBaseUrl);
-
-  const response = await fetch(url, {
-    headers: {
-      'X-Auth-Token': apiKey,
-    },
+  const normalizedBaseUrl = apiBaseUrl.endsWith('/') ? apiBaseUrl : `${apiBaseUrl}/`;
+  const url = new URL(`competitions/${competition}/matches`, normalizedBaseUrl);
+  const payload = await getJsonWithHttps<FootballDataResponse>(url, {
+    Accept: 'application/json',
+    'X-Auth-Token': apiKey,
+    'User-Agent': 'bolao-copa/1.0',
   });
-
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`Football-Data request failed with status ${response.status}: ${body}`);
-  }
-
-  const payload = (await response.json()) as FootballDataResponse;
 
   if (!Array.isArray(payload.matches)) {
     throw new Error(`Unexpected Football-Data response: ${JSON.stringify(payload)}`);
