@@ -43,7 +43,7 @@ When match scores are updated in `matches`, prediction points for that match are
 
 ## Match Sync Backend
 
-The backend has a protected endpoint to sync fixtures/results from API-Football into `matches`:
+The backend has a protected endpoint to sync fixtures/results from a football API into `matches`:
 
 ```http
 POST /admin/sync-matches
@@ -55,8 +55,8 @@ Required backend env vars:
 - `SUPABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `SYNC_SECRET`
-- `FOOTBALL_API_KEY`
-- `FOOTBALL_LEAGUE_ID`
-- `FOOTBALL_SEASON`
+- `FOOTBALL_API_PROVIDER=football-data`
+- `FOOTBALL_DATA_API_KEY`
+- `FOOTBALL_DATA_COMPETITION=WC`
 
-Do not expose `SUPABASE_SERVICE_ROLE_KEY`, `SYNC_SECRET`, or `FOOTBALL_API_KEY` in the frontend.
+Do not expose `SUPABASE_SERVICE_ROLE_KEY`, `SYNC_SECRET`, or football API keys in the frontend.

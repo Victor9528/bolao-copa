@@ -27,6 +27,30 @@ type ApiFootballResponse = {
   errors?: unknown;
 };
 
+type FootballDataMatch = {
+  id: number;
+  utcDate: string;
+  status: string;
+  homeTeam: {
+    name: string;
+  };
+  awayTeam: {
+    name: string;
+  };
+  score: {
+    fullTime: {
+      home: number | null;
+      away: number | null;
+    };
+  };
+};
+
+type FootballDataResponse = {
+  matches?: FootballDataMatch[];
+  message?: string;
+  errorCode?: number;
+};
+
 type MatchRow = {
   external_id: string;
   home_team: string;
@@ -40,10 +64,18 @@ type MatchRow = {
 
 const finishedStatuses = new Set(['FT', 'AET', 'PEN']);
 const liveStatuses = new Set(['1H', 'HT', '2H', 'ET', 'BT', 'P', 'SUSP', 'INT', 'LIVE']);
+const footballDataFinishedStatuses = new Set(['FINISHED']);
+const footballDataLiveStatuses = new Set(['IN_PLAY', 'PAUSED']);
 
 function toMatchStatus(apiStatus: string): MatchRow['status'] {
   if (finishedStatuses.has(apiStatus)) return 'finished';
   if (liveStatuses.has(apiStatus)) return 'live';
+  return 'scheduled';
+}
+
+function toFootballDataMatchStatus(apiStatus: string): MatchRow['status'] {
+  if (footballDataFinishedStatuses.has(apiStatus)) return 'finished';
+  if (footballDataLiveStatuses.has(apiStatus)) return 'live';
   return 'scheduled';
 }
 
@@ -73,6 +105,22 @@ function mapApiFootballFixtures(fixtures: ApiFootballFixture[]): MatchRow[] {
       starts_at: fixture.fixture.date,
       status: toMatchStatus(fixture.fixture.status.short),
       counts_for_pool: shouldCountForPool(fixture.fixture.date, index),
+    }));
+}
+
+function mapFootballDataMatches(matches: FootballDataMatch[]): MatchRow[] {
+  return matches
+    .slice()
+    .sort((a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime())
+    .map((match, index) => ({
+      external_id: String(match.id),
+      home_team: match.homeTeam.name,
+      away_team: match.awayTeam.name,
+      home_score: match.score.fullTime.home,
+      away_score: match.score.fullTime.away,
+      starts_at: match.utcDate,
+      status: toFootballDataMatchStatus(match.status),
+      counts_for_pool: shouldCountForPool(match.utcDate, index),
     }));
 }
 
@@ -109,14 +157,48 @@ async function fetchApiFootballFixtures() {
   return mapApiFootballFixtures(payload.response);
 }
 
-export async function syncMatches() {
-  const provider = process.env.FOOTBALL_API_PROVIDER || 'api-football';
+async function fetchFootballDataMatches() {
+  const apiBaseUrl = process.env.FOOTBALL_DATA_API_BASE_URL || 'https://api.football-data.org/v4';
+  const apiKey = process.env.FOOTBALL_DATA_API_KEY || process.env.FOOTBALL_API_KEY;
+  const competition = process.env.FOOTBALL_DATA_COMPETITION || 'WC';
 
-  if (provider !== 'api-football') {
-    throw new Error(`Unsupported FOOTBALL_API_PROVIDER: ${provider}`);
+  if (!apiKey) {
+    throw new Error('Missing FOOTBALL_DATA_API_KEY');
   }
 
-  const matches = await fetchApiFootballFixtures();
+  const url = new URL(`/competitions/${competition}/matches`, apiBaseUrl);
+
+  const response = await fetch(url, {
+    headers: {
+      'X-Auth-Token': apiKey,
+    },
+  });
+
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`Football-Data request failed with status ${response.status}: ${body}`);
+  }
+
+  const payload = (await response.json()) as FootballDataResponse;
+
+  if (!Array.isArray(payload.matches)) {
+    throw new Error(`Unexpected Football-Data response: ${JSON.stringify(payload)}`);
+  }
+
+  return mapFootballDataMatches(payload.matches);
+}
+
+export async function syncMatches() {
+  const provider = process.env.FOOTBALL_API_PROVIDER || 'api-football';
+  const matches = provider === 'football-data'
+    ? await fetchFootballDataMatches()
+    : provider === 'api-football'
+      ? await fetchApiFootballFixtures()
+      : undefined;
+
+  if (!matches) {
+    throw new Error(`Unsupported FOOTBALL_API_PROVIDER: ${provider}`);
+  }
   const supabase = createSupabaseAdminClient();
 
   if (matches.length === 0) {
