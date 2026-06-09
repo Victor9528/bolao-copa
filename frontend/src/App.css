@@ -1198,3 +1198,33 @@ p {
   color: #9ca3af;
   font-weight: 700;
 }
+
+.pill-toggle {
+  display: flex;
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+  margin-bottom: 0.75rem;
+}
+
+.pill-toggle button {
+  flex: 1;
+  padding: 0.5rem 1rem;
+  border: none;
+  background: #f9fafb;
+  color: #6b7280;
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.pill-toggle button.active {
+  background: #38d20f;
+  color: #fff;
+}
+
+.pill-toggle button:not(.active):hover {
+  background: #e5e7eb;
+}

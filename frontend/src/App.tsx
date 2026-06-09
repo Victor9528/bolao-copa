@@ -23,6 +23,7 @@ function App() {
           <Route path="/grupos" element={<Groups />} />
           <Route path="/grupos/:id" element={<GroupDetail />} />
           <Route path="/grupos/entrar/:code" element={<JoinGroup />} />
+          <Route path="/grupos/entrar" element={<JoinGroup />} />
           <Route path="/jogos" element={<Matches />} />
           <Route path="/ranking" element={<Ranking />} />
           <Route path="/regulamento" element={<Rules />} />

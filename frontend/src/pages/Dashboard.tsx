@@ -67,10 +67,10 @@ export function Dashboard() {
               <h2>Criar grupo</h2>
               <p>Crie um grupo e convide amigos para competir.</p>
             </Link>
-            <Link to="/grupos" className="home-card">
+            <Link to="/grupos/entrar" className="home-card">
               <span className="home-card-icon">&rarr;</span>
               <h2>Entrar em grupo</h2>
-              <p>Use o codigo de 8 caracteres para participar.</p>
+              <p>Encontre grupos publicos ou use um codigo privado.</p>
             </Link>
             <Link to="/regulamento" className="home-card">
               <span className="home-card-icon">i</span>

@@ -8,9 +8,10 @@ import { supabase } from '../lib/supabase'
 type Group = {
   id: number
   name: string
-  code: string
+  code: string | null
   owner_id: string
   created_at: string
+  is_public: boolean
 }
 
 function generateCode(): string {
@@ -31,6 +32,7 @@ export function Groups() {
   const [error, setError] = useState('')
 
   const [createName, setCreateName] = useState('')
+  const [isPublic, setIsPublic] = useState(false)
   const [creating, setCreating] = useState(false)
   const [createdGroup, setCreatedGroup] = useState<Group | null>(null)
 
@@ -112,11 +114,11 @@ export function Groups() {
     setCreating(true)
     setError('')
 
-    const code = generateCode()
+    const code = isPublic ? null : generateCode()
 
     const { data, error: createError } = await supabase
       .from('groups')
-      .insert({ name: createName, code, owner_id: user.id })
+      .insert({ name: createName, code, owner_id: user.id, is_public: isPublic })
       .select()
       .single()
 
@@ -175,7 +177,7 @@ export function Groups() {
     navigate(`/grupos/${group.id}`)
   }
 
-  const joinUrl = user ? `${window.location.origin}/grupos/entrar/${createdGroup?.code}` : ''
+  const joinUrl = user && createdGroup?.code ? `${window.location.origin}/grupos/entrar/${createdGroup.code}` : ''
 
   if (!session) {
     return <Navigate to="/login" replace />
@@ -195,43 +197,48 @@ export function Groups() {
       {createdGroup ? (
         <article className="content-card">
           <h2>Grupo criado com sucesso!</h2>
-          <p style={{ color: '#6b7280' }}>Compartilhe o codigo ou o link abaixo para convidar amigos.</p>
-
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '1rem',
-            padding: '1.5rem 0',
-          }}>
-            <p style={{ fontSize: '2rem', fontWeight: 900, letterSpacing: '0.3em', color: '#38d20f', margin: 0 }}>
-              {createdGroup.code}
-            </p>
-            <QRCodeSVG value={joinUrl} size={180} />
-            <div style={{
-              display: 'flex',
-              gap: '0.5rem',
-              flexWrap: 'wrap',
-              justifyContent: 'center',
-            }}>
-              <button
-                className="hero-cta"
-                style={{ border: 0, cursor: 'pointer', font: 'inherit', fontSize: '0.85rem' }}
-                onClick={() => navigator.clipboard.writeText(joinUrl)}
-                type="button"
-              >
-                Copiar link
-              </button>
-              <button
-                className="hero-cta"
-                style={{ border: 0, cursor: 'pointer', font: 'inherit', fontSize: '0.85rem' }}
-                onClick={() => navigator.clipboard.writeText(createdGroup.code)}
-                type="button"
-              >
-                Copiar codigo
-              </button>
-            </div>
-          </div>
+          {createdGroup.is_public ? (
+            <p style={{ color: '#6b7280' }}>Seu grupo e publico — qualquer pessoa pode encontrar e entrar sem codigo.</p>
+          ) : (
+            <>
+              <p style={{ color: '#6b7280' }}>Compartilhe o codigo ou o link abaixo para convidar amigos.</p>
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '1rem',
+                padding: '1.5rem 0',
+              }}>
+                <p style={{ fontSize: '2rem', fontWeight: 900, letterSpacing: '0.3em', color: '#38d20f', margin: 0 }}>
+                  {createdGroup.code}
+                </p>
+                <QRCodeSVG value={joinUrl} size={180} />
+                <div style={{
+                  display: 'flex',
+                  gap: '0.5rem',
+                  flexWrap: 'wrap',
+                  justifyContent: 'center',
+                }}>
+                  <button
+                    className="hero-cta"
+                    style={{ border: 0, cursor: 'pointer', font: 'inherit', fontSize: '0.85rem' }}
+                    onClick={() => navigator.clipboard.writeText(joinUrl)}
+                    type="button"
+                  >
+                    Copiar link
+                  </button>
+                  <button
+                    className="hero-cta"
+                    style={{ border: 0, cursor: 'pointer', font: 'inherit', fontSize: '0.85rem' }}
+                    onClick={() => navigator.clipboard.writeText(createdGroup.code!)}
+                    type="button"
+                  >
+                    Copiar codigo
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
 
           <div style={{ display: 'flex', gap: '0.75rem' }}>
             <Link className="primary-link" to={`/grupos/${createdGroup.id}`} style={{ textDecoration: 'none' }}>
@@ -263,6 +270,22 @@ export function Groups() {
                     required
                   />
                 </label>
+                <div className="pill-toggle">
+                  <button
+                    type="button"
+                    className={!isPublic ? 'active' : ''}
+                    onClick={() => setIsPublic(false)}
+                  >
+                    Privado
+                  </button>
+                  <button
+                    type="button"
+                    className={isPublic ? 'active' : ''}
+                    onClick={() => setIsPublic(true)}
+                  >
+                    Publico
+                  </button>
+                </div>
                 <button type="submit" disabled={creating}>
                   {creating ? 'Criando...' : 'Criar grupo'}
                 </button>
@@ -320,7 +343,7 @@ export function Groups() {
                       <strong style={{ fontSize: '1.1rem' }}>{g.name}</strong>
                       <p style={{ margin: '0.25rem 0 0', color: '#6b7280', fontFamily: 'monospace' }}>
                         {g.owner_id === user?.id && <span style={{ color: '#38d20f', fontWeight: 800 }}>Dono · </span>}
-                        Codigo: {g.code}
+                        {g.is_public ? <span style={{ color: '#38d20f' }}>Publico</span> : <>Codigo: {g.code}</>}
                       </p>
                     </div>
                     <div style={{ textAlign: 'right' }}>
