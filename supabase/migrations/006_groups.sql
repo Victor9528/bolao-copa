@@ -52,6 +52,21 @@ as $$
   group by p.id, p.display_name;
 $$;
 
+-- Helper function to check group membership (bypasses RLS to avoid recursion)
+
+create or replace function public.is_group_member(group_id bigint, user_id uuid)
+returns boolean
+language sql
+stable
+security definer
+as $$
+  select exists (
+    select 1 from public.group_members
+    where group_members.group_id = is_group_member.group_id
+      and group_members.user_id = is_group_member.user_id
+  );
+$$;
+
 -- RLS
 
 alter table public.groups enable row level security;
@@ -70,7 +85,7 @@ create policy "Members can view groups they belong to"
   on public.groups for select
   to authenticated
   using (
-    id in (select group_id from public.group_members where user_id = auth.uid())
+    public.is_group_member(id, auth.uid())
     or auth.uid() = owner_id
   );
 
@@ -80,7 +95,7 @@ create policy "Members can view members of their groups"
   on public.group_members for select
   to authenticated
   using (
-    group_id in (select group_id from public.group_members where user_id = auth.uid())
+    public.is_group_member(group_id, auth.uid())
     or group_id in (select id from public.groups where owner_id = auth.uid())
   );
 
@@ -108,3 +123,4 @@ grant select, insert, update, delete on public.groups to authenticated;
 grant select, insert, delete on public.group_members to authenticated;
 grant select, insert, update, delete on public.default_predictions to authenticated;
 grant execute on function public.group_ranking to authenticated;
+grant execute on function public.is_group_member to authenticated;
