@@ -36,8 +36,8 @@ export function Login() {
     <main className="auth-shell">
       <section className="auth-card">
         <p className="eyebrow">Bolao da Copa EloGroup</p>
-        <h1>Entre para registrar seus palpites</h1>
-        <p className="muted">Acesse sua conta para acompanhar jogos, palpites e ranking.</p>
+        <h1>Entrar no Bolao</h1>
+        <p className="muted">Acesse sua conta para registrar palpites e acompanhar o ranking.</p>
 
         {!isSupabaseConfigured && (
           <div className="notice">

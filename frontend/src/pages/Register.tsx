@@ -44,8 +44,8 @@ export function Register() {
     <main className="auth-shell">
       <section className="auth-card">
         <p className="eyebrow">Novo participante</p>
-        <h1>Crie sua conta no Bolao</h1>
-        <p className="muted">Use email e senha para entrar na plataforma do bolao.</p>
+        <h1>Criar conta</h1>
+        <p className="muted">Cadastre-se para participar do bolao. Escolha como quer aparecer no ranking.</p>
 
         {!isSupabaseConfigured && (
           <div className="notice">
