@@ -118,6 +118,11 @@ export function GroupDetail() {
   async function handleLeave() {
     if (!user || !group) return
 
+    const confirmed = window.confirm(
+      `Tem certeza que deseja sair do grupo "${group.name}"? Voce precisara do codigo novamente para voltar.`
+    )
+    if (!confirmed) return
+
     const { error } = await supabase
       .from('group_members')
       .delete()
