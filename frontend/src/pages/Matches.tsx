@@ -27,17 +27,109 @@ type PredictionDraft = {
   away_score: string
 }
 
+type TeamPresentation = {
+  code: string
+  flagCode?: string
+}
+
+type StatusFilter = 'upcoming' | 'finished'
+type RoundFilter = 'all' | 'round1' | 'round2' | 'round3' | 'round32' | 'round16' | 'quarter' | 'semi' | 'third' | 'final'
+
 const predictionDeadline = new Date('2026-06-13T18:00:00.000Z')
 
-function formatMatchDate(value: string) {
+const roundFilters: Array<{ id: RoundFilter; label: string }> = [
+  { id: 'all', label: 'Todas' },
+  { id: 'round1', label: '1ª rodada' },
+  { id: 'round2', label: '2ª rodada' },
+  { id: 'round3', label: '3ª rodada' },
+  { id: 'round32', label: 'Fase de 32' },
+  { id: 'round16', label: 'Oitavas de final' },
+  { id: 'quarter', label: 'Quartas de final' },
+  { id: 'semi', label: 'Semifinais' },
+  { id: 'third', label: 'Disputa de 3º lugar' },
+  { id: 'final', label: 'Final' },
+]
+
+const teams: Record<string, TeamPresentation> = {
+  Argentina: { code: 'ARG', flagCode: 'ar' },
+  Australia: { code: 'AUS', flagCode: 'au' },
+  Belgium: { code: 'BEL', flagCode: 'be' },
+  Brazil: { code: 'BRA', flagCode: 'br' },
+  Canada: { code: 'CAN', flagCode: 'ca' },
+  Colombia: { code: 'COL', flagCode: 'co' },
+  Croatia: { code: 'CRO', flagCode: 'hr' },
+  Czechia: { code: 'CZE', flagCode: 'cz' },
+  Denmark: { code: 'DEN', flagCode: 'dk' },
+  Ecuador: { code: 'ECU', flagCode: 'ec' },
+  England: { code: 'ENG', flagCode: 'gb-eng' },
+  France: { code: 'FRA', flagCode: 'fr' },
+  Germany: { code: 'GER', flagCode: 'de' },
+  Ghana: { code: 'GHA', flagCode: 'gh' },
+  Haiti: { code: 'HAI', flagCode: 'ht' },
+  Iran: { code: 'IRN', flagCode: 'ir' },
+  Italy: { code: 'ITA', flagCode: 'it' },
+  Japan: { code: 'JPN', flagCode: 'jp' },
+  Mexico: { code: 'MEX', flagCode: 'mx' },
+  Morocco: { code: 'MAR', flagCode: 'ma' },
+  Netherlands: { code: 'NED', flagCode: 'nl' },
+  Paraguay: { code: 'PAR', flagCode: 'py' },
+  Poland: { code: 'POL', flagCode: 'pl' },
+  Portugal: { code: 'POR', flagCode: 'pt' },
+  Qatar: { code: 'QAT', flagCode: 'qa' },
+  Scotland: { code: 'SCO', flagCode: 'gb-sct' },
+  Senegal: { code: 'SEN', flagCode: 'sn' },
+  Serbia: { code: 'SRB', flagCode: 'rs' },
+  'South Africa': { code: 'RSA', flagCode: 'za' },
+  'South Korea': { code: 'KOR', flagCode: 'kr' },
+  Spain: { code: 'ESP', flagCode: 'es' },
+  Switzerland: { code: 'SUI', flagCode: 'ch' },
+  Uruguay: { code: 'URU', flagCode: 'uy' },
+  USA: { code: 'USA', flagCode: 'us' },
+}
+
+function formatMatchDay(value: string) {
   return new Intl.DateTimeFormat('pt-BR', {
     weekday: 'short',
     day: '2-digit',
     month: '2-digit',
+    timeZone: 'America/Sao_Paulo',
+  }).format(new Date(value)).toUpperCase()
+}
+
+function formatMatchTime(value: string) {
+  return new Intl.DateTimeFormat('pt-BR', {
     hour: '2-digit',
     minute: '2-digit',
     timeZone: 'America/Sao_Paulo',
   }).format(new Date(value))
+}
+
+function getTeamPresentation(teamName: string) {
+  return teams[teamName] ?? {
+    code: teamName
+      .split(/\s|-/)
+      .filter(Boolean)
+      .map((part) => part[0])
+      .join('')
+      .slice(0, 3)
+      .toUpperCase() || 'TBD',
+  }
+}
+
+function getRoundFilterForIndex(index: number): RoundFilter {
+  if (index < 24) return 'round1'
+  if (index < 48) return 'round2'
+  if (index < 72) return 'round3'
+  if (index < 88) return 'round32'
+  if (index < 96) return 'round16'
+  if (index < 100) return 'quarter'
+  if (index < 102) return 'semi'
+  if (index === 102) return 'third'
+  return 'final'
+}
+
+function getRoundTitle(roundFilter: RoundFilter) {
+  return roundFilters.find((filter) => filter.id === roundFilter)?.label ?? 'Jogos'
 }
 
 function getScoreLabel(match: Match) {
@@ -58,11 +150,36 @@ export function Matches() {
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [predictionsOpen] = useState(() => new Date().getTime() < predictionDeadline.getTime())
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('upcoming')
+  const [roundFilter, setRoundFilter] = useState<RoundFilter>('all')
 
   const completedPredictions = useMemo(
     () => Object.values(drafts).filter((draft) => draft.home_score !== '' && draft.away_score !== '').length,
     [drafts],
   )
+
+  const filteredMatches = useMemo(() => {
+    return matches.filter((match, index) => {
+      const statusMatches = statusFilter === 'finished' ? match.status === 'finished' : match.status !== 'finished'
+      const roundMatches = roundFilter === 'all' || getRoundFilterForIndex(index) === roundFilter
+      return statusMatches && roundMatches
+    })
+  }, [matches, roundFilter, statusFilter])
+
+  const groupedMatches = useMemo(() => {
+    return filteredMatches.reduce<Array<{ day: string; matches: Match[] }>>((acc, match) => {
+      const day = formatMatchDay(match.starts_at)
+      const currentGroup = acc[acc.length - 1]
+
+      if (currentGroup?.day === day) {
+        currentGroup.matches.push(match)
+      } else {
+        acc.push({ day, matches: [match] })
+      }
+
+      return acc
+    }, [])
+  }, [filteredMatches])
 
   useEffect(() => {
     if (!user) return
@@ -183,7 +300,7 @@ export function Matches() {
   }
 
   return (
-    <main className="dashboard-shell">
+    <main className="games-shell">
       <nav className="topbar">
         <div>
           <p className="eyebrow">Bolao da Copa</p>
@@ -199,15 +316,44 @@ export function Matches() {
         </div>
       </nav>
 
-      <section className="dashboard-hero matches-hero">
+      <section className="scoring-strip">
+        <strong>Pontos por jogada</strong>
+        <span><b>4</b> placar exato</span>
+        <span><b>2</b> vencedor/empate</span>
+        <span><b>0</b> erro</span>
+        <button type="button">Ver detalhes</button>
+      </section>
+
+      <section className="games-tabs" aria-label="Navegacao principal">
+        <Link className="active" to="/jogos">Jogos</Link>
+        <Link to="/">Ranking</Link>
+        <a href="#regulamento">Regulamento</a>
+      </section>
+
+      <header className="games-header">
         <div>
-          <p className="eyebrow">Sua rodada</p>
-          <h1>Registre seus placares</h1>
-          <p className="muted">Salve ou edite seus palpites ate 13/jun as 15h. Os quatro primeiros jogos nao pontuam.</p>
+          <h1>Jogos</h1>
+          <p>Palpites salvos: {loading ? '-' : `${completedPredictions}/${matches.length}`}</p>
         </div>
-        <div className="deadline-card">
-          <span>Progresso</span>
-          <strong>{loading ? '-' : `${completedPredictions}/${matches.length}`}</strong>
+        <strong>{matches.length} jogos</strong>
+      </header>
+
+      <section className="games-filters" aria-label="Filtros dos jogos">
+        <div className="status-pills">
+          <button className={statusFilter === 'upcoming' ? 'active' : ''} type="button" onClick={() => setStatusFilter('upcoming')}>
+            Proximos
+          </button>
+          <button className={statusFilter === 'finished' ? 'active' : ''} type="button" onClick={() => setStatusFilter('finished')}>
+            Encerrados
+          </button>
+        </div>
+
+        <div className="round-pills">
+          {roundFilters.map((filter) => (
+            <button className={roundFilter === filter.id ? 'active' : ''} key={filter.id} type="button" onClick={() => setRoundFilter(filter.id)}>
+              {filter.label}
+            </button>
+          ))}
         </div>
       </section>
 
@@ -218,68 +364,90 @@ export function Matches() {
       {message && <div className="success-alert">{message}</div>}
       {error && <div className="dashboard-alert">{error}</div>}
 
-      {loading && <section className="ranking-card">Carregando jogos...</section>}
+      {loading && <section className="games-empty">Carregando jogos...</section>}
 
       {!loading && matches.length === 0 && (
-        <section className="ranking-card">
+        <section className="games-empty">
           <h2>Nenhum jogo cadastrado</h2>
           <p className="muted">Sincronize os jogos pelo backend para liberar os palpites.</p>
         </section>
       )}
 
-      {!loading && matches.length > 0 && (
-        <section className="matches-list" aria-label="Lista de jogos">
-          {matches.map((match, index) => {
-            const draft = drafts[match.id] ?? { home_score: '', away_score: '' }
-            const prediction = predictions[match.id]
-            const disabled = !predictionsOpen || savingMatchId === match.id
+      {!loading && matches.length > 0 && groupedMatches.length === 0 && (
+        <section className="games-empty">Nenhum jogo encontrado para este filtro.</section>
+      )}
 
-            return (
-              <article className="match-card" key={match.id}>
-                <div className="match-meta">
-                  <span>Jogo {index + 1}</span>
-                  <time>{formatMatchDate(match.starts_at)}</time>
-                  {!match.counts_for_pool && <em>Nao pontua</em>}
-                </div>
+      {!loading && groupedMatches.length > 0 && (
+        <section className="games-board" aria-label="Lista de jogos">
+          <div className="round-title">{roundFilter === 'all' ? 'Todas as rodadas' : getRoundTitle(roundFilter)}</div>
 
-                <div className="match-main">
-                  <strong>{match.home_team}</strong>
-                  <div className="score-inputs">
-                    <input
-                      aria-label={`Palpite ${match.home_team}`}
-                      inputMode="numeric"
-                      min="0"
-                      max="99"
-                      type="number"
-                      value={draft.home_score}
-                      onChange={(event) => updateDraft(match.id, 'home_score', event)}
-                      disabled={disabled}
-                    />
-                    <span>x</span>
-                    <input
-                      aria-label={`Palpite ${match.away_team}`}
-                      inputMode="numeric"
-                      min="0"
-                      max="99"
-                      type="number"
-                      value={draft.away_score}
-                      onChange={(event) => updateDraft(match.id, 'away_score', event)}
-                      disabled={disabled}
-                    />
-                  </div>
-                  <strong>{match.away_team}</strong>
-                </div>
+          {groupedMatches.map((group) => (
+            <div className="day-group" key={group.day}>
+              <h2>{group.day}</h2>
+              <div className="games-grid">
+                {group.matches.map((match) => {
+                  const draft = drafts[match.id] ?? { home_score: '', away_score: '' }
+                  const prediction = predictions[match.id]
+                  const disabled = !predictionsOpen || savingMatchId === match.id
+                  const home = getTeamPresentation(match.home_team)
+                  const away = getTeamPresentation(match.away_team)
 
-                <div className="match-footer">
-                  <span>Resultado oficial: {getScoreLabel(match)}</span>
-                  {prediction && <span>{prediction.points} pts</span>}
-                  <button type="button" onClick={() => savePrediction(match)} disabled={disabled}>
-                    {savingMatchId === match.id ? 'Salvando...' : prediction ? 'Atualizar' : 'Salvar'}
-                  </button>
-                </div>
-              </article>
-            )
-          })}
+                  return (
+                    <article className="game-card" key={match.id}>
+                      <div className="game-card-info">
+                        <time>{formatMatchTime(match.starts_at)}</time>
+                        <span>{match.counts_for_pool ? 'Pontua' : 'Nao pontua'}</span>
+                      </div>
+
+                      <div className="game-card-field">
+                        <div className="team-block">
+                          {home.flagCode ? <img alt="" src={`https://flagcdn.com/w80/${home.flagCode}.png`} /> : <div className="flag-fallback" />}
+                          <strong>{home.code}</strong>
+                        </div>
+
+                        <div className="compact-score">
+                          <input
+                            aria-label={`Palpite ${match.home_team}`}
+                            disabled={disabled}
+                            inputMode="numeric"
+                            max="99"
+                            min="0"
+                            onChange={(event) => updateDraft(match.id, 'home_score', event)}
+                            type="number"
+                            value={draft.home_score}
+                          />
+                          <span>x</span>
+                          <input
+                            aria-label={`Palpite ${match.away_team}`}
+                            disabled={disabled}
+                            inputMode="numeric"
+                            max="99"
+                            min="0"
+                            onChange={(event) => updateDraft(match.id, 'away_score', event)}
+                            type="number"
+                            value={draft.away_score}
+                          />
+                        </div>
+
+                        <div className="team-block">
+                          {away.flagCode ? <img alt="" src={`https://flagcdn.com/w80/${away.flagCode}.png`} /> : <div className="flag-fallback" />}
+                          <strong>{away.code}</strong>
+                        </div>
+                      </div>
+
+                      <div className="game-card-footer">
+                        <span>{getScoreLabel(match)}</span>
+                        {prediction && <span>{prediction.points} pts</span>}
+                        <button disabled={disabled} onClick={() => savePrediction(match)} type="button">
+                          {savingMatchId === match.id ? 'Salvando' : prediction ? 'Atualizar' : 'Salvar'}
+                        </button>
+                      </div>
+                    </article>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
         </section>
       )}
     </main>
