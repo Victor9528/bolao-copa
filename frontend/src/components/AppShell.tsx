@@ -28,8 +28,8 @@ export function AppShell({ children }: AppShellProps) {
 
       <section className="scoring-strip">
         <strong>Pontos por jogada</strong>
-        <span><b>4</b> placar exato</span>
-        <span><b>2</b> vencedor/empate</span>
+        <span><b>25</b> placar exato</span>
+        <span><b>10</b> vencedor</span>
         <span><b>0</b> erro</span>
         <Link to="/regulamento">Ver detalhes</Link>
       </section>

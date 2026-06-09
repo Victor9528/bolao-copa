@@ -24,9 +24,12 @@ export function Rules() {
           <span className="section-number">02</span>
           <h2>Pontuacao</h2>
           <ul className="rules-list">
-            <li><strong>4 pontos</strong> para placar exato.</li>
-            <li><strong>2 pontos</strong> para vencedor correto ou empate correto.</li>
-            <li><strong>0 ponto</strong> para resultado incorreto.</li>
+            <li><strong>25 pontos</strong> para placar exato.</li>
+            <li><strong>18 pontos</strong> para vencedor + gols do vencedor.</li>
+            <li><strong>15 pontos</strong> para vencedor + diferença de gols.</li>
+            <li><strong>12 pontos</strong> para vencedor + gols do perdedor.</li>
+            <li><strong>10 pontos</strong> para apenas o vencedor.</li>
+            <li><strong>0 ponto</strong> para nenhum acerto.</li>
           </ul>
         </article>
 
