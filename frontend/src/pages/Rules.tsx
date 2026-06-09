@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom'
 import { AppShell } from '../components/AppShell'
 
 export function Rules() {
@@ -15,35 +14,44 @@ export function Rules() {
       <section className="rules-grid">
         <article className="content-card">
           <span className="section-number">01</span>
-          <h2>Como participar</h2>
-          <p>Crie sua conta, acesse a tela de jogos e preencha o placar de cada partida antes do prazo final.</p>
-          <Link className="primary-link" to="/jogos">Preencher palpites</Link>
+          <h2>Palpites</h2>
+          <p>Faça seu palpite do placar de cada jogo antes do início da partida. Você pode alterar seu palpite até o apito inicial.</p>
         </article>
 
         <article className="content-card">
           <span className="section-number">02</span>
-          <h2>Pontuacao</h2>
-          <ul className="rules-list">
-            <li><strong>25 pontos</strong> para placar exato.</li>
-            <li><strong>18 pontos</strong> para vencedor + gols do vencedor.</li>
-            <li><strong>15 pontos</strong> para vencedor + diferença de gols.</li>
-            <li><strong>12 pontos</strong> para vencedor + gols do perdedor.</li>
-            <li><strong>10 pontos</strong> para apenas o vencedor.</li>
-            <li><strong>0 ponto</strong> para nenhum acerto.</li>
-          </ul>
+          <h2>Pontuação</h2>
+          <p>Sistema de 6 níveis: de 25 pontos pelo placar exato até 0 por errar o palpite. Quanto mais perto do resultado, mais pontos você ganha!</p>
         </article>
 
         <article className="content-card">
           <span className="section-number">03</span>
-          <h2>Jogos sem pontuacao</h2>
-          <p>Os quatro primeiros jogos da Copa nao contam pontos no ranking, mesmo que o palpite esteja salvo.</p>
+          <h2>Pontos dobrados no mata-mata da Copa</h2>
+          <p>Na Copa do Mundo 2026, as partidas do mata-mata valem o dobro. Acertar um placar exato vale 50 pontos, não 25. Procure pelo selo x2 nos cards das partidas.</p>
         </article>
 
         <article className="content-card">
           <span className="section-number">04</span>
+          <h2>Prorrogação</h2>
+          <p>Se a partida for para a prorrogação, o placar final considerado será o do fim da prorrogação (90min + 30min). Pênaltis não contam.</p>
+        </article>
+
+        <article className="content-card">
+          <span className="section-number">05</span>
+          <h2>Prazo</h2>
+          <p>Os palpites são bloqueados no horário previsto do jogo ou no pontapé inicial, o que ocorrer primeiro. Fique atento aos horários dos jogos!</p>
+        </article>
+
+        <article className="content-card">
+          <span className="section-number">06</span>
           <h2>Ranking</h2>
-          <p>O ranking soma automaticamente os pontos dos palpites quando os resultados oficiais forem atualizados.</p>
-          <Link className="primary-link" to="/ranking">Ver ranking</Link>
+          <p>Os pontos de todos os jogos são somados para formar o ranking do bolão. Vence quem tiver mais pontos ao final!</p>
+        </article>
+
+        <article className="content-card">
+          <span className="section-number">07</span>
+          <h2>Critério de desempate</h2>
+          <p>Quando dois jogadores terminam com a mesma pontuação, o desempate considera a qualidade dos acertos, nesta ordem: mais placares exatos, depois mais acertos de vencedor + gols do vencedor, saldo de gols, gols do perdedor e, por fim, vencedor certo. Permanecendo o empate, fica à frente quem entrou primeiro no bolão.</p>
         </article>
       </section>
     </AppShell>
