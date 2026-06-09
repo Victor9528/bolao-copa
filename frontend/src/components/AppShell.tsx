@@ -26,14 +26,6 @@ export function AppShell({ children }: AppShellProps) {
         </div>
       </nav>
 
-      <section className="scoring-strip">
-        <strong>Pontos por jogada</strong>
-        <span><b>25</b> placar exato</span>
-        <span><b>10</b> vencedor</span>
-        <span><b>0</b> erro</span>
-        <Link to="/regulamento">Ver detalhes</Link>
-      </section>
-
       {children}
     </main>
   )

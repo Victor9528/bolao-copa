@@ -6,10 +6,18 @@ import { supabase } from '../lib/supabase'
 import { formatMatchTime, getTeamPresentation, groupMatchesByDay } from '../lib/matches'
 import type { Match } from '../lib/matches'
 
+type UserGroup = {
+  id: number
+  name: string
+  is_public: boolean
+  member_count: number
+}
+
 export function Dashboard() {
   const { user } = useAuth()
   const [displayName, setDisplayName] = useState('')
   const [matches, setMatches] = useState<Match[]>([])
+  const [groups, setGroups] = useState<UserGroup[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -38,6 +46,54 @@ export function Dashboard() {
 
       if (!matchesResult.error) {
         setMatches((matchesResult.data ?? []) as Match[])
+      }
+
+      const { data: ownedData } = await supabase
+        .from('groups')
+        .select('*')
+        .eq('owner_id', currentUser.id)
+
+      const { data: memberData } = await supabase
+        .from('group_members')
+        .select('group_id')
+        .eq('user_id', currentUser.id)
+
+      if (!active) return
+
+      const memberGroupIds = [...new Set([
+        ...(ownedData ?? []).map(g => g.id),
+        ...(memberData ?? []).map(m => m.group_id),
+      ])]
+
+      if (memberGroupIds.length > 0) {
+        const { data: allGroups } = await supabase
+          .from('groups')
+          .select('*')
+          .in('id', memberGroupIds)
+
+        if (!active) return
+
+        if (allGroups) {
+          const { data: counts } = await supabase
+            .from('group_members')
+            .select('group_id')
+
+          const countMap: Record<number, number> = {}
+          if (counts) {
+            counts.forEach(m => {
+              countMap[m.group_id] = (countMap[m.group_id] || 0) + 1
+            })
+          }
+
+          setGroups(
+            allGroups.map(g => ({
+              id: g.id,
+              name: g.name,
+              is_public: g.is_public,
+              member_count: countMap[g.id] ?? 0,
+            }))
+          )
+        }
       }
 
       setLoading(false)
@@ -78,6 +134,30 @@ export function Dashboard() {
               <p>Confira como funciona a pontuacao.</p>
             </Link>
           </section>
+
+          {groups.length > 0 && (
+            <section className="home-matches">
+              <h2>Meus grupos</h2>
+              <div className="home-matches-list">
+                {groups.map((g) => (
+                  <Link
+                    key={g.id}
+                    to={`/grupos/${g.id}`}
+                    className="home-match-row"
+                    style={{ textDecoration: 'none', color: 'inherit' }}
+                  >
+                    <strong style={{ flex: 1, fontSize: '1.05rem' }}>{g.name}</strong>
+                    <span style={{ color: '#6b7280', fontSize: '0.85rem' }}>
+                      {g.member_count} membro{g.member_count !== 1 ? 's' : ''}
+                    </span>
+                    <span style={{ color: '#38d20f', fontWeight: 700, fontSize: '0.8rem' }}>
+                      {g.is_public ? 'Publico' : 'Privado'}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
 
           <section className="home-matches">
             <h2>Proximos jogos</h2>
