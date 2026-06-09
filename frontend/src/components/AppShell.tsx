@@ -37,6 +37,7 @@ export function AppShell({ children }: AppShellProps) {
       <section className="games-tabs" aria-label="Navegacao principal">
         <NavLink end to="/">Home</NavLink>
         <NavLink to="/jogos">Jogos</NavLink>
+        <NavLink to="/grupos">Grupos</NavLink>
         <NavLink to="/ranking">Ranking</NavLink>
         <NavLink to="/regulamento">Regulamento</NavLink>
       </section>

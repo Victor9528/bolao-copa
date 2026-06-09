@@ -170,6 +170,7 @@ export function Matches() {
   const [predictionsOpen] = useState(() => new Date().getTime() < predictionDeadline.getTime())
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('upcoming')
   const [roundFilter, setRoundFilter] = useState<RoundFilter>('all')
+  const [hasDefaults, setHasDefaults] = useState(false)
 
   const completedPredictions = useMemo(
     () => Object.values(drafts).filter((draft) => draft.home_score !== '' && draft.away_score !== '').length,
@@ -249,6 +250,15 @@ export function Matches() {
       setMatches(nextMatches)
       setPredictions(nextPredictions)
       setDrafts(nextDrafts)
+
+      const { count } = await supabase
+        .from('default_predictions')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', currentUser.id)
+
+      if (!active) return
+      setHasDefaults((count ?? 0) > 0)
+
       setLoading(false)
     }
 
@@ -258,6 +268,43 @@ export function Matches() {
       active = false
     }
   }, [user])
+
+  async function fillWithDefaults() {
+    if (!user) return
+
+    const { data: defaults } = await supabase
+      .from('default_predictions')
+      .select('match_id, home_score, away_score')
+      .eq('user_id', user.id)
+
+    if (!defaults || defaults.length === 0) {
+      setMessage('Nenhum palpite padrao salvo. Va em Perfil para definir.')
+      return
+    }
+
+    const defaultMap = new Map(defaults.map(d => [d.match_id, d]))
+    const filled: Record<number, PredictionDraft> = {}
+
+    for (const match of matches) {
+      const current = drafts[match.id]
+      const def = defaultMap.get(match.id)
+
+      if (current?.home_score === '' && current?.away_score === '' && def) {
+        filled[match.id] = {
+          home_score: String(def.home_score),
+          away_score: String(def.away_score),
+        }
+      }
+    }
+
+    if (Object.keys(filled).length === 0) {
+      setMessage('Todos os jogos ja tem preenchimento ou nenhum padrao corresponde.')
+      return
+    }
+
+    setDrafts((current) => ({ ...current, ...filled }))
+    setMessage(`Preenchido com padrao para ${Object.keys(filled).length} jogo(s). Revise e salve.`)
+  }
 
   function updateDraft(matchId: number, field: keyof PredictionDraft, event: ChangeEvent<HTMLInputElement>) {
     const value = event.target.value
@@ -352,6 +399,19 @@ export function Matches() {
 
       {message && <div className="success-alert">{message}</div>}
       {error && <div className="dashboard-alert">{error}</div>}
+
+      {predictionsOpen && hasDefaults && (
+        <div style={{ width: 'min(74.5rem, 100%)', margin: '0.75rem auto', display: 'flex', justifyContent: 'flex-end' }}>
+          <button
+            className="ghost-button"
+            style={{ border: '1px solid #38d20f', color: '#38d20f', background: '#fff', cursor: 'pointer', font: 'inherit', fontWeight: 900 }}
+            onClick={fillWithDefaults}
+            type="button"
+          >
+            Preencher com padrao
+          </button>
+        </div>
+      )}
 
       {loading && <section className="games-empty">Carregando jogos...</section>}
 

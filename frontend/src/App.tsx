@@ -1,6 +1,9 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { Dashboard } from './pages/Dashboard'
+import { GroupDetail } from './pages/GroupDetail'
+import { Groups } from './pages/Groups'
+import { JoinGroup } from './pages/JoinGroup'
 import { Login } from './pages/Login'
 import { Matches } from './pages/Matches'
 import { Profile } from './pages/Profile'
@@ -17,6 +20,9 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route element={<ProtectedRoute />}>
           <Route path="/" element={<Dashboard />} />
+          <Route path="/grupos" element={<Groups />} />
+          <Route path="/grupos/:id" element={<GroupDetail />} />
+          <Route path="/grupos/entrar/:code" element={<JoinGroup />} />
           <Route path="/jogos" element={<Matches />} />
           <Route path="/ranking" element={<Ranking />} />
           <Route path="/regulamento" element={<Rules />} />
