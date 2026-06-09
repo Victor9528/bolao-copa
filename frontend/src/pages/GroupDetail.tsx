@@ -8,9 +8,10 @@ import { supabase } from '../lib/supabase'
 type Group = {
   id: number
   name: string
-  code: string
+  code: string | null
   owner_id: string
   created_at: string
+  is_public: boolean
 }
 
 type Member = {
@@ -164,7 +165,7 @@ export function GroupDetail() {
     return <Navigate to="/login" replace />
   }
 
-  const joinUrl = group ? `${window.location.origin}/grupos/entrar/${group.code}` : ''
+  const joinUrl = group?.code ? `${window.location.origin}/grupos/entrar/${group.code}` : ''
 
   return (
     <AppShell>
@@ -181,7 +182,11 @@ export function GroupDetail() {
               <h1>{group.name}</h1>
               {group.owner_id === user?.id && (
                 <p className="muted" style={{ fontFamily: 'monospace', fontWeight: 800 }}>
-                  Codigo: {group.code}
+                  {group.is_public ? (
+                    <span style={{ color: '#38d20f' }}>Grupo publico</span>
+                  ) : (
+                    <>Codigo: {group.code}</>
+                  )}
                 </p>
               )}
             </div>
@@ -206,37 +211,46 @@ export function GroupDetail() {
             <article className="content-card" style={{
               width: 'auto', margin: 0, padding: '1.25rem',
             }}>
-              <h2>Compartilhar</h2>
-              <p className="muted">Envie o QR code ou o link para os amigos entrarem no grupo.</p>
-              <div style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center',
-                gap: '0.75rem', padding: '1rem 0',
-              }}>
-                <QRCodeSVG value={joinUrl} size={160} />
-                <p style={{ fontSize: '0.85rem', color: '#6b7280', wordBreak: 'break-all', textAlign: 'center', margin: 0 }}>
-                  {joinUrl}
-                </p>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button
-                    className="hero-cta"
-                    style={{ border: 0, cursor: 'pointer', font: 'inherit', fontSize: '0.85rem' }}
-                    onClick={() => navigator.clipboard.writeText(joinUrl)}
-                    type="button"
-                  >
-                    Copiar link
-                  </button>
-                  {group.owner_id === user?.id && (
-                    <button
-                      className="hero-cta"
-                      style={{ border: 0, cursor: 'pointer', font: 'inherit', fontSize: '0.85rem' }}
-                      onClick={() => navigator.clipboard.writeText(group.code)}
-                      type="button"
-                    >
-                      Copiar codigo
-                    </button>
-                  )}
-                </div>
-              </div>
+              {group.is_public ? (
+                <>
+                  <h2>Grupo publico</h2>
+                  <p className="muted">Qualquer pessoa pode encontrar e entrar neste grupo sem codigo.</p>
+                </>
+              ) : (
+                <>
+                  <h2>Compartilhar</h2>
+                  <p className="muted">Envie o QR code ou o link para os amigos entrarem no grupo.</p>
+                  <div style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center',
+                    gap: '0.75rem', padding: '1rem 0',
+                  }}>
+                    <QRCodeSVG value={joinUrl} size={160} />
+                    <p style={{ fontSize: '0.85rem', color: '#6b7280', wordBreak: 'break-all', textAlign: 'center', margin: 0 }}>
+                      {joinUrl}
+                    </p>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <button
+                        className="hero-cta"
+                        style={{ border: 0, cursor: 'pointer', font: 'inherit', fontSize: '0.85rem' }}
+                        onClick={() => navigator.clipboard.writeText(joinUrl)}
+                        type="button"
+                      >
+                        Copiar link
+                      </button>
+                      {group.owner_id === user?.id && (
+                        <button
+                          className="hero-cta"
+                          style={{ border: 0, cursor: 'pointer', font: 'inherit', fontSize: '0.85rem' }}
+                          onClick={() => navigator.clipboard.writeText(group.code!)}
+                          type="button"
+                        >
+                          Copiar codigo
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
             </article>
 
             <article className="content-card" style={{
