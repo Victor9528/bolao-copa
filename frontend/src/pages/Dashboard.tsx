@@ -128,6 +128,11 @@ export function Dashboard() {
               <h2>Entrar em grupo</h2>
               <p>Encontre grupos publicos ou use um codigo privado.</p>
             </Link>
+            <Link to="/ranking" className="home-card">
+              <span className="home-card-icon">#</span>
+              <h2>Ver ranking</h2>
+              <p>Confira a pontuacao de todos os participantes.</p>
+            </Link>
             <Link to="/regulamento" className="home-card">
               <span className="home-card-icon">i</span>
               <h2>Ver regras</h2>
