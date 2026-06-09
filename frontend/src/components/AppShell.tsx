@@ -1,4 +1,4 @@
-import { Link, NavLink } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import { useAuth } from '../contexts/useAuth'
 
@@ -17,9 +17,9 @@ export function AppShell({ children }: AppShellProps) {
           <strong>EloGroup</strong>
         </Link>
         <div className="topbar-actions">
-          <NavLink className={({ isActive }) => `ghost-link ${isActive ? 'active' : ''}`} to="/perfil">
+          <Link className="ghost-link" to="/perfil">
             Perfil
-          </NavLink>
+          </Link>
           <button type="button" className="ghost-button" onClick={signOut}>
             Sair
           </button>
@@ -32,14 +32,6 @@ export function AppShell({ children }: AppShellProps) {
         <span><b>10</b> vencedor</span>
         <span><b>0</b> erro</span>
         <Link to="/regulamento">Ver detalhes</Link>
-      </section>
-
-      <section className="games-tabs" aria-label="Navegacao principal">
-        <NavLink end to="/">Home</NavLink>
-        <NavLink to="/jogos">Jogos</NavLink>
-        <NavLink to="/grupos">Grupos</NavLink>
-        <NavLink to="/ranking">Ranking</NavLink>
-        <NavLink to="/regulamento">Regulamento</NavLink>
       </section>
 
       {children}

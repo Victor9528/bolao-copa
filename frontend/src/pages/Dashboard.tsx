@@ -3,26 +3,14 @@ import { Link } from 'react-router-dom'
 import { AppShell } from '../components/AppShell'
 import { useAuth } from '../contexts/useAuth'
 import { supabase } from '../lib/supabase'
-
-type RankingRow = {
-  rank_position: number
-  display_name: string
-  total_points: number
-  predictions_count: number
-}
-
-type DashboardData = {
-  displayName: string
-  matchesCount: number
-  predictionsCount: number
-  ranking: RankingRow[]
-}
+import { formatMatchTime, getTeamPresentation, groupMatchesByDay } from '../lib/matches'
+import type { Match } from '../lib/matches'
 
 export function Dashboard() {
   const { user } = useAuth()
-  const [data, setData] = useState<DashboardData | null>(null)
+  const [displayName, setDisplayName] = useState('')
+  const [matches, setMatches] = useState<Match[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
 
   useEffect(() => {
     if (!user) return
@@ -30,127 +18,98 @@ export function Dashboard() {
     let active = true
     const currentUser = user
 
-    async function loadDashboard() {
+    async function load() {
       setLoading(true)
-      setError('')
 
-      const [profileResult, matchesResult, predictionsResult, rankingResult] = await Promise.all([
+      const [profileResult, matchesResult] = await Promise.all([
         supabase.from('profiles').select('display_name').eq('id', currentUser.id).maybeSingle(),
-        supabase.from('matches').select('id', { count: 'exact', head: true }),
-        supabase.from('predictions').select('id', { count: 'exact', head: true }).eq('user_id', currentUser.id),
         supabase
-          .from('ranking')
-          .select('rank_position, display_name, total_points, predictions_count')
-          .order('rank_position', { ascending: true })
-          .limit(5),
+          .from('matches')
+          .select('id, home_team, away_team, home_score, away_score, starts_at, status, counts_for_pool')
+          .neq('status', 'finished')
+          .order('starts_at', { ascending: true }),
       ])
 
       if (!active) return
 
-      const firstError = profileResult.error || matchesResult.error || predictionsResult.error || rankingResult.error
-
-      if (firstError) {
-        setError('Nao foi possivel carregar os dados do bolao. Confira se as migrations do Supabase foram aplicadas.')
-        setLoading(false)
-        return
+      if (!profileResult.error) {
+        setDisplayName(profileResult.data?.display_name || currentUser.email || 'Participante')
       }
 
-      setData({
-        displayName: profileResult.data?.display_name || currentUser.email || 'Participante',
-        matchesCount: matchesResult.count ?? 0,
-        predictionsCount: predictionsResult.count ?? 0,
-        ranking: (rankingResult.data ?? []) as RankingRow[],
-      })
+      if (!matchesResult.error) {
+        setMatches((matchesResult.data ?? []) as Match[])
+      }
+
       setLoading(false)
     }
 
-    loadDashboard()
-
-    return () => {
-      active = false
-    }
+    load()
+    return () => { active = false }
   }, [user])
+
+  const grouped = groupMatchesByDay(matches)
 
   return (
     <AppShell>
-      <section className="home-hero">
-        <div>
-          <p className="eyebrow">Sessao ativa</p>
-          <h1>Bem-vindo ao Bolao</h1>
-          <p>Conta conectada: {user?.email}</p>
-          <Link className="hero-cta" to="/jogos">Preencher palpites</Link>
-        </div>
-        <div className="deadline-card">
-          <span>Prazo dos palpites</span>
-          <strong>13/jun as 15h</strong>
-        </div>
-      </section>
+      <header className="dashboard-header">
+        <h1>{displayName}</h1>
+      </header>
 
-      {error && <div className="dashboard-alert">{error}</div>}
+      {loading && matches.length === 0 && (
+        <section className="games-empty">Carregando...</section>
+      )}
 
-      <section className="stats-grid" aria-label="Resumo do bolao">
-        <article>
-          <span>Participante</span>
-          <strong>{loading ? 'Carregando...' : data?.displayName}</strong>
-        </article>
-        <article>
-          <span>Jogos cadastrados</span>
-          <strong>{loading ? '-' : data?.matchesCount}</strong>
-        </article>
-        <article>
-          <span>Seus palpites</span>
-          <strong>{loading ? '-' : data?.predictionsCount}</strong>
-        </article>
-      </section>
+      {!loading && (
+        <>
+          <section className="home-cards">
+            <Link to="/grupos" className="home-card">
+              <span className="home-card-icon">+</span>
+              <h2>Criar grupo</h2>
+              <p>Crie um grupo e convide amigos para competir.</p>
+            </Link>
+            <Link to="/grupos" className="home-card">
+              <span className="home-card-icon">&rarr;</span>
+              <h2>Entrar em grupo</h2>
+              <p>Use o codigo de 8 caracteres para participar.</p>
+            </Link>
+            <Link to="/regulamento" className="home-card">
+              <span className="home-card-icon">i</span>
+              <h2>Ver regras</h2>
+              <p>Confira como funciona a pontuacao.</p>
+            </Link>
+          </section>
 
-      <section className="feature-grid">
-        <article>
-          <span>01</span>
-          <h2>Jogos da Copa</h2>
-          <p>{data?.matchesCount ? 'Jogos prontos para receber palpites.' : 'Nenhum jogo cadastrado ainda.'}</p>
-          <Link className="card-link" to="/jogos">
-            Ver jogos
-          </Link>
-        </article>
-        <article>
-          <span>02</span>
-          <h2>Palpites</h2>
-          <p>Voce podera registrar placares ate 13/jun as 15h.</p>
-        </article>
-        <article>
-          <span>03</span>
-          <h2>Ranking</h2>
-          <p>Pontuacao calculada automaticamente quando os resultados forem atualizados.</p>
-          <Link className="card-link" to="/ranking">
-            Ver ranking
-          </Link>
-        </article>
-      </section>
-
-      <section className="ranking-card">
-        <div>
-          <p className="eyebrow">Top 5</p>
-          <h2>Ranking geral</h2>
-        </div>
-
-        {loading && <p className="muted">Carregando ranking...</p>}
-
-        {!loading && data?.ranking.length === 0 && (
-          <p className="muted">O ranking aparecera aqui quando houver participantes e pontuacao.</p>
-        )}
-
-        {!loading && Boolean(data?.ranking.length) && (
-          <ol className="ranking-list">
-            {data?.ranking.map((row) => (
-              <li key={`${row.rank_position}-${row.display_name}`}>
-                <span>{row.rank_position}</span>
-                <strong>{row.display_name}</strong>
-                <em>{row.total_points} pts</em>
-              </li>
+          <section className="home-matches">
+            <h2>Proximos jogos</h2>
+            {matches.length === 0 && (
+              <p className="muted">Nenhum jogo futuro encontrado.</p>
+            )}
+            {grouped.map((group) => (
+              <div className="day-group" key={group.day}>
+                <h3>{group.day}</h3>
+                <div className="home-matches-list">
+                  {group.matches.map((match) => {
+                    const home = getTeamPresentation(match.home_team)
+                    const away = getTeamPresentation(match.away_team)
+                    return (
+                      <div className="home-match-row" key={match.id}>
+                        <time>{formatMatchTime(match.starts_at)}</time>
+                        <div className="home-match-teams">
+                          {home.flagCode && <img alt="" src={`https://flagcdn.com/w80/${home.flagCode}.png`} />}
+                          <strong>{home.code}</strong>
+                          <span>x</span>
+                          <strong>{away.code}</strong>
+                          {away.flagCode && <img alt="" src={`https://flagcdn.com/w80/${away.flagCode}.png`} />}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
             ))}
-          </ol>
-        )}
-      </section>
+          </section>
+        </>
+      )}
     </AppShell>
   )
 }

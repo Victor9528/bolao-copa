@@ -1071,3 +1071,130 @@ p {
     width: 3rem;
   }
 }
+
+.dashboard-header {
+  width: min(74.5rem, 100%);
+  margin: 1.5rem auto 0;
+  padding: 0 1rem;
+}
+
+.dashboard-header h1 {
+  font-size: 1.75rem;
+  font-weight: 900;
+  color: #1f2937;
+  margin: 0;
+}
+
+.home-cards {
+  width: min(74.5rem, 100%);
+  margin: 1.5rem auto;
+  padding: 0 1rem;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.home-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1.5rem;
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  text-decoration: none;
+  color: inherit;
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+
+.home-card:hover {
+  border-color: #38d20f;
+  box-shadow: 0 2px 12px rgba(56, 210, 15, 0.15);
+}
+
+.home-card-icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+  background: #f0fdf4;
+  color: #38d20f;
+  font-size: 1.25rem;
+  font-weight: 900;
+}
+
+.home-card h2 {
+  font-size: 1.1rem;
+  font-weight: 800;
+  margin: 0;
+  color: #1f2937;
+}
+
+.home-card p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+.home-matches {
+  width: min(74.5rem, 100%);
+  margin: 1.5rem auto;
+  padding: 0 1rem;
+}
+
+.home-matches h2 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #1f2937;
+  margin: 0 0 1rem;
+}
+
+.home-matches-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.home-match-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+}
+
+.home-match-row time {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #374151;
+  min-width: 3.5rem;
+}
+
+.home-match-teams {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.home-match-teams img {
+  width: 1.25rem;
+  height: auto;
+  border-radius: 2px;
+}
+
+.home-match-teams strong {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #1f2937;
+}
+
+.home-match-teams span {
+  color: #9ca3af;
+  font-weight: 700;
+}
