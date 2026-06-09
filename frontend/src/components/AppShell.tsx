@@ -13,8 +13,7 @@ export function AppShell({ children }: AppShellProps) {
     <main className="games-shell">
       <nav className="topbar app-topbar">
         <Link className="brand-link" to="/">
-          <p className="eyebrow">Bolao da Copa</p>
-          <strong>EloGroup</strong>
+          <strong>Bolão Copa 2026</strong>
         </Link>
         <div className="topbar-actions">
           <Link className="ghost-link" to="/perfil">
