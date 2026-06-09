@@ -9,6 +9,7 @@ export function JoinGroup() {
   const { user, session } = useAuth()
   const [status, setStatus] = useState<'loading' | 'invalid' | 'duplicate' | 'joined' | 'error'>('loading')
   const [groupName, setGroupName] = useState('')
+  const [errorMessage, setErrorMessage] = useState('')
 
   useEffect(() => {
     if (!user || !code) return
@@ -36,7 +37,7 @@ export function JoinGroup() {
       const { error: insertError } = await supabase
         .from('group_members')
         .insert({ group_id: group.id, user_id: currentUser.id })
-        .select()
+
 
       if (!active) return
 
@@ -45,6 +46,7 @@ export function JoinGroup() {
           setStatus('duplicate')
         } else {
           setStatus('error')
+          setErrorMessage(insertError.message)
         }
         return
       }
@@ -54,7 +56,7 @@ export function JoinGroup() {
 
     join()
 
-    return () => { active = true }
+    return () => { active = false }
   }, [user, code])
 
   if (!session) {
@@ -104,7 +106,7 @@ export function JoinGroup() {
         {status === 'error' && (
           <>
             <h2>Erro ao entrar no grupo</h2>
-            <p className="muted">Tente novamente ou use o codigo manualmente.</p>
+            <p className="muted">{errorMessage || 'Tente novamente ou use o codigo manualmente.'}</p>
             <Link className="primary-link" to="/grupos" style={{ textDecoration: 'none' }}>
               Ir para grupos
             </Link>
