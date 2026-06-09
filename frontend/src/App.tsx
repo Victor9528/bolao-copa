@@ -3,7 +3,10 @@ import { ProtectedRoute } from './components/ProtectedRoute'
 import { Dashboard } from './pages/Dashboard'
 import { Login } from './pages/Login'
 import { Matches } from './pages/Matches'
+import { Profile } from './pages/Profile'
+import { Ranking } from './pages/Ranking'
 import { Register } from './pages/Register'
+import { Rules } from './pages/Rules'
 import './App.css'
 
 function App() {
@@ -15,6 +18,9 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/jogos" element={<Matches />} />
+          <Route path="/ranking" element={<Ranking />} />
+          <Route path="/regulamento" element={<Rules />} />
+          <Route path="/perfil" element={<Profile />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

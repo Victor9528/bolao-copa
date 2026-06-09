@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ChangeEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { AppShell } from '../components/AppShell'
 import { useAuth } from '../contexts/useAuth'
 import { supabase } from '../lib/supabase'
 
@@ -141,7 +141,7 @@ function getScoreLabel(match: Match) {
 }
 
 export function Matches() {
-  const { user, signOut } = useAuth()
+  const { user } = useAuth()
   const [matches, setMatches] = useState<Match[]>([])
   const [predictions, setPredictions] = useState<Record<number, Prediction>>({})
   const [drafts, setDrafts] = useState<Record<number, PredictionDraft>>({})
@@ -300,36 +300,7 @@ export function Matches() {
   }
 
   return (
-    <main className="games-shell">
-      <nav className="topbar">
-        <div>
-          <p className="eyebrow">Bolao da Copa</p>
-          <strong>Jogos e palpites</strong>
-        </div>
-        <div className="topbar-actions">
-          <Link className="ghost-link" to="/">
-            Dashboard
-          </Link>
-          <button type="button" className="ghost-button" onClick={signOut}>
-            Sair
-          </button>
-        </div>
-      </nav>
-
-      <section className="scoring-strip">
-        <strong>Pontos por jogada</strong>
-        <span><b>4</b> placar exato</span>
-        <span><b>2</b> vencedor/empate</span>
-        <span><b>0</b> erro</span>
-        <button type="button">Ver detalhes</button>
-      </section>
-
-      <section className="games-tabs" aria-label="Navegacao principal">
-        <Link className="active" to="/jogos">Jogos</Link>
-        <Link to="/">Ranking</Link>
-        <a href="#regulamento">Regulamento</a>
-      </section>
-
+    <AppShell>
       <header className="games-header">
         <div>
           <h1>Jogos</h1>
@@ -450,6 +421,6 @@ export function Matches() {
           ))}
         </section>
       )}
-    </main>
+    </AppShell>
   )
 }

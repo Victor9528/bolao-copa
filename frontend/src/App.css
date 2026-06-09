@@ -18,6 +18,58 @@
   color: #111827;
 }
 
+.games-shell .topbar {
+  width: min(74.5rem, 100%);
+  margin-bottom: 1rem;
+  color: #111827;
+}
+
+.brand-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.brand-link .eyebrow {
+  margin-bottom: 0.25rem;
+}
+
+.games-shell .ghost-button,
+.games-shell .ghost-link {
+  background: #fff;
+  color: #111827;
+  box-shadow: 0 1px 0 rgba(17, 24, 39, 0.06);
+}
+
+.games-shell .ghost-link.active {
+  color: #38d20f;
+}
+
+.games-shell .deadline-card,
+.games-shell .feature-grid article,
+.games-shell .stats-grid article,
+.games-shell .ranking-card {
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #111827;
+  box-shadow: 0 1px 0 rgba(17, 24, 39, 0.06);
+}
+
+.games-shell .feature-grid,
+.games-shell .stats-grid,
+.games-shell .ranking-card {
+  width: min(74.5rem, 100%);
+}
+
+.games-shell .feature-grid p,
+.games-shell .stats-grid span,
+.games-shell .ranking-card .muted {
+  color: #6b7280;
+}
+
+.games-shell .ranking-list li {
+  background: #f9fafb;
+}
+
 .auth-shell {
   display: grid;
   place-items: center;
@@ -374,6 +426,14 @@ p {
   font: inherit;
 }
 
+.scoring-strip a {
+  margin-left: auto;
+  color: #38d20f;
+  font-weight: 900;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
 .games-tabs {
   display: flex;
   gap: 1.25rem;
@@ -395,6 +455,204 @@ p {
 .games-tabs a.active {
   border-color: #38d20f;
   color: #38d20f;
+}
+
+.home-hero,
+.content-card,
+.rules-grid {
+  width: min(74.5rem, 100%);
+  margin-inline: auto;
+}
+
+.home-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1.25rem;
+  align-items: end;
+  margin-top: 1.4rem;
+  border-radius: 0.5rem;
+  padding: clamp(1.25rem, 3vw, 2rem);
+  background: #fff;
+  box-shadow: 0 1px 0 rgba(17, 24, 39, 0.06);
+}
+
+.home-hero h1 {
+  margin-bottom: 0.5rem;
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  line-height: 0.95;
+}
+
+.home-hero p {
+  color: #6b7280;
+}
+
+.hero-cta,
+.primary-link {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  border-radius: 999px;
+  padding: 0.75rem 1rem;
+  background: #38d20f;
+  color: #fff;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.content-card {
+  margin-top: 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 1.25rem;
+  background: #fff;
+  box-shadow: 0 1px 0 rgba(17, 24, 39, 0.06);
+}
+
+.soft-text {
+  color: #6b7280;
+}
+
+.page-alert {
+  width: min(74.5rem, 100%);
+  margin: 1rem auto 0;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.ranking-page-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.ranking-table {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ranking-table li {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  gap: 1rem;
+  align-items: center;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 1rem;
+}
+
+.ranking-table li:last-child {
+  border-bottom: 0;
+}
+
+.ranking-table li.current-user {
+  background: #f0fdf4;
+}
+
+.rank-number {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border-radius: 999px;
+  background: #38d20f;
+  color: #fff;
+  font-weight: 900;
+}
+
+.ranking-table em {
+  color: #459d19;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.rules-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.rules-grid .content-card {
+  width: auto;
+  margin: 0;
+}
+
+.section-number {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border-radius: 999px;
+  background: #38d20f;
+  color: #fff;
+  font-weight: 900;
+}
+
+.rules-list {
+  display: grid;
+  gap: 0.6rem;
+  padding-left: 1.15rem;
+  color: #4b5563;
+}
+
+.profile-card {
+  max-width: 36rem;
+}
+
+.profile-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.profile-form label {
+  display: grid;
+  gap: 0.45rem;
+  color: #374151;
+  font-weight: 900;
+}
+
+.profile-form input {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.45rem;
+  padding: 0.85rem 1rem;
+  background: #f9fafb;
+  color: #111827;
+  font: inherit;
+}
+
+.profile-form input:focus {
+  outline: 2px solid #38d20f;
+  outline-offset: 1px;
+}
+
+.profile-form button {
+  border: 0;
+  border-radius: 999px;
+  width: fit-content;
+  padding: 0.8rem 1rem;
+  background: #38d20f;
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 900;
+}
+
+.inline-success,
+.inline-error {
+  border-radius: 0.45rem;
+  padding: 0.75rem 1rem;
+}
+
+.inline-success {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.inline-error {
+  background: #fee2e2;
+  color: #991b1b;
 }
 
 .games-header {
@@ -762,6 +1020,16 @@ p {
 
   .games-grid {
     grid-template-columns: 1fr;
+  }
+
+  .home-hero,
+  .rules-grid,
+  .ranking-table li {
+    grid-template-columns: 1fr;
+  }
+
+  .ranking-table li {
+    gap: 0.5rem;
   }
 
   .game-card-field {

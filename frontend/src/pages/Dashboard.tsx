@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { AppShell } from '../components/AppShell'
 import { useAuth } from '../contexts/useAuth'
 import { supabase } from '../lib/supabase'
 
@@ -18,7 +19,7 @@ type DashboardData = {
 }
 
 export function Dashboard() {
-  const { user, signOut } = useAuth()
+  const { user } = useAuth()
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -71,22 +72,13 @@ export function Dashboard() {
   }, [user])
 
   return (
-    <main className="dashboard-shell">
-      <nav className="topbar">
-        <div>
-          <p className="eyebrow">Bolao da Copa</p>
-          <strong>EloGroup</strong>
-        </div>
-        <button type="button" className="ghost-button" onClick={signOut}>
-          Sair
-        </button>
-      </nav>
-
-      <section className="dashboard-hero">
+    <AppShell>
+      <section className="home-hero">
         <div>
           <p className="eyebrow">Sessao ativa</p>
           <h1>Bem-vindo ao Bolao</h1>
-          <p className="muted">Conta conectada: {user?.email}</p>
+          <p>Conta conectada: {user?.email}</p>
+          <Link className="hero-cta" to="/jogos">Preencher palpites</Link>
         </div>
         <div className="deadline-card">
           <span>Prazo dos palpites</span>
@@ -129,6 +121,9 @@ export function Dashboard() {
           <span>03</span>
           <h2>Ranking</h2>
           <p>Pontuacao calculada automaticamente quando os resultados forem atualizados.</p>
+          <Link className="card-link" to="/ranking">
+            Ver ranking
+          </Link>
         </article>
       </section>
 
@@ -156,6 +151,6 @@ export function Dashboard() {
           </ol>
         )}
       </section>
-    </main>
+    </AppShell>
   )
 }
