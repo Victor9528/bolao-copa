@@ -258,20 +258,16 @@ export function GroupDetail() {
             }}>
               <h2>Membros ({members.length})</h2>
               {members.length === 0 && <p className="soft-text">Nenhum membro ainda.</p>}
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: '0.5rem' }}>
+              <ul className="group-members-list">
                 {members.map((m) => (
-                  <li key={m.user_id} style={{
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    padding: '0.5rem 0.75rem', borderRadius: '0.5rem',
-                    background: m.user_id === group.owner_id ? '#f0fdf4' : '#f9fafb',
-                  }}>
+                  <li key={m.user_id} className={`group-member-item ${m.user_id === group.owner_id ? 'owner' : ''}`}>
                     <span>
                       <strong>{m.display_name}</strong>
                       {m.user_id === group.owner_id && (
-                        <span style={{ color: '#38d20f', fontWeight: 800, marginLeft: '0.5rem' }}>Dono</span>
+                        <span className="group-member-role">Dono</span>
                       )}
                     </span>
-                    {m.user_id === user?.id && <span style={{ color: '#6b7280', fontSize: '0.85rem' }}>Voce</span>}
+                    {m.user_id === user?.id && <span className="group-member-you">Voce</span>}
                   </li>
                 ))}
               </ul>

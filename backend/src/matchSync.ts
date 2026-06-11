@@ -67,6 +67,8 @@ type MatchRow = {
   counts_for_pool: boolean;
 };
 
+type ExistingMatchRow = Pick<MatchRow, 'external_id' | 'home_score' | 'away_score' | 'status' | 'counts_for_pool'>;
+
 type SyncMatchesOptions = {
   force?: boolean;
 };
@@ -140,6 +142,42 @@ function mapFootballDataMatches(matches: FootballDataMatch[]): MatchRow[] {
       status: toFootballDataMatchStatus(match.status),
       counts_for_pool: shouldCountForPool(match.utcDate, index),
     }));
+}
+
+async function preserveExistingScores(matches: MatchRow[], supabase: ReturnType<typeof createSupabaseAdminClient>) {
+  const externalIds = matches.map((match) => match.external_id);
+
+  const { data: existingMatches, error } = await supabase
+    .from('matches')
+    .select('external_id, home_score, away_score, status, counts_for_pool')
+    .in('external_id', externalIds);
+
+  if (error) {
+    throw new Error(`Supabase existing matches lookup failed: ${error.message}`);
+  }
+
+  const existingByExternalId = new Map(
+    ((existingMatches ?? []) as ExistingMatchRow[]).map((match) => [match.external_id, match]),
+  );
+
+  return matches.map((match) => {
+    const existing = existingByExternalId.get(match.external_id);
+
+    if (!existing) return match;
+
+    const apiHasScore = match.home_score !== null && match.away_score !== null;
+    const existingHasScore = existing.home_score !== null && existing.away_score !== null;
+
+    if (apiHasScore || !existingHasScore) return match;
+
+    return {
+      ...match,
+      home_score: existing.home_score,
+      away_score: existing.away_score,
+      status: existing.status,
+      counts_for_pool: existing.counts_for_pool,
+    };
+  });
 }
 
 async function fetchApiFootballFixtures() {
@@ -299,9 +337,11 @@ export async function syncMatches(options: SyncMatchesOptions = {}) {
     return { synced: 0, skipped: false };
   }
 
+  const matchesToUpsert = await preserveExistingScores(matches, supabase);
+
   const { error } = await supabase
     .from('matches')
-    .upsert(matches, { onConflict: 'external_id' });
+    .upsert(matchesToUpsert, { onConflict: 'external_id' });
 
   if (error) {
     throw new Error(`Supabase match upsert failed: ${error.message}`);

@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { syncMatches } from './matchSync';
+import { startMatchSyncScheduler } from './matchSyncScheduler';
 
 dotenv.config();
 
@@ -39,4 +40,5 @@ app.post('/admin/sync-matches', async (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Backend server running on http://localhost:${PORT}`);
+  startMatchSyncScheduler();
 });
