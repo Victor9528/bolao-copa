@@ -13,6 +13,39 @@ type UserGroup = {
   member_count: number
 }
 
+const scoringRules = [
+  {
+    points: 25,
+    title: 'Placar exato',
+    detail: 'Acertou o resultado e o número de gols dos dois times.',
+  },
+  {
+    points: 18,
+    title: 'Vencedor + gols do vencedor',
+    detail: 'Acertou quem venceu e quantos gols o time vencedor fez.',
+  },
+  {
+    points: 15,
+    title: 'Vencedor + saldo',
+    detail: 'Acertou quem venceu e a diferença de gols da partida.',
+  },
+  {
+    points: 12,
+    title: 'Vencedor + gols do perdedor',
+    detail: 'Acertou quem venceu e quantos gols o time derrotado fez.',
+  },
+  {
+    points: 10,
+    title: 'Resultado correto',
+    detail: 'Acertou o vencedor ou previu corretamente um empate.',
+  },
+  {
+    points: 0,
+    title: 'Errou o resultado',
+    detail: 'Sem pontos. Bola pra frente, o próximo jogo vem aí.',
+  },
+]
+
 export function Dashboard() {
   const { user } = useAuth()
   const [displayName, setDisplayName] = useState('')
@@ -117,6 +150,23 @@ export function Dashboard() {
 
       {!loading && (
         <>
+          <section className="home-scoring" aria-labelledby="home-scoring-title">
+            <p className="home-scoring-eyebrow">Regras simples</p>
+            <h2 id="home-scoring-title">Como você pontua</h2>
+            <div className="home-scoring-grid">
+              {scoringRules.map((rule) => (
+                <article className="home-scoring-card" key={rule.title}>
+                  <p className="home-scoring-points">
+                    {rule.points}
+                    <span>pts</span>
+                  </p>
+                  <h3>{rule.title}</h3>
+                  <p>{rule.detail}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+
           <section className="home-cards">
             <Link to="/grupos" className="home-card">
               <span className="home-card-icon">+</span>

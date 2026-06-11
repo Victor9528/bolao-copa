@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { Dashboard } from './pages/Dashboard'
+import { FableLanding } from './pages/FableLanding'
 import { GroupDetail } from './pages/GroupDetail'
 import { Groups } from './pages/Groups'
 import { JoinGroup } from './pages/JoinGroup'
@@ -18,6 +19,7 @@ function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/fable-5" element={<FableLanding />} />
         <Route element={<ProtectedRoute />}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/grupos" element={<Groups />} />

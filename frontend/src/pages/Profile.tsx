@@ -163,7 +163,7 @@ export function Profile() {
         </p>
         <p className="muted" style={{ fontSize: '0.85rem' }}>
           Use "Salvar palpites atuais como padrao" para copiar seus palpites ja salvos como template.
-          Depois, ao entrar em um grupo ou acessar a pagina de jogos, clique em "Preencher com padrao".
+          A pagina de jogos agora guia os palpites pendentes em uma partida por vez.
         </p>
 
         {defaultsMessage && <div className={defaultsMessage.includes('Erro') ? 'inline-error' : 'inline-success'}>{defaultsMessage}</div>}

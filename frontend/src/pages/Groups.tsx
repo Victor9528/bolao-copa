@@ -254,7 +254,7 @@ export function Groups() {
           <div className="feature-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
             <article className="content-card" style={{
               width: 'auto', margin: 0, padding: '1.25rem',
-              borderRadius: '0.5rem', border: '1px solid #e5e7eb', background: '#fff',
+              borderRadius: '0.5rem',
             }}>
               <h2>Criar grupo</h2>
               <p>Crie um grupo e convide amigos para participar.</p>
@@ -294,7 +294,7 @@ export function Groups() {
 
             <article className="content-card" style={{
               width: 'auto', margin: 0, padding: '1.25rem',
-              borderRadius: '0.5rem', border: '1px solid #e5e7eb', background: '#fff',
+              borderRadius: '0.5rem',
             }}>
               <h2>Entrar em grupo</h2>
               <p>Digite o codigo de 8 caracteres do grupo.</p>
@@ -330,25 +330,25 @@ export function Groups() {
               <div className="rules-grid" style={{ gridTemplateColumns: '1fr', gap: '0.75rem', marginTop: '0.5rem' }}>
                 {groups.map((g) => (
                   <Link
+                    className="content-card"
                     key={g.id}
                     to={`/grupos/${g.id}`}
                     style={{
                       display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                       padding: '1rem', borderRadius: '0.5rem',
-                      border: '1px solid #e5e7eb', background: '#f9fafb',
                       textDecoration: 'none', color: 'inherit',
                     }}
                   >
                     <div>
                       <strong style={{ fontSize: '1.1rem' }}>{g.name}</strong>
-                      <p style={{ margin: '0.25rem 0 0', color: '#6b7280', fontFamily: 'monospace' }}>
+                      <p className="soft-text" style={{ margin: '0.25rem 0 0', fontFamily: 'monospace' }}>
                         {g.owner_id === user?.id && <span style={{ color: '#38d20f', fontWeight: 800 }}>Dono · </span>}
                         {g.is_public ? <span style={{ color: '#38d20f' }}>Publico</span> : <>Codigo: {g.code}</>}
                       </p>
                     </div>
                     <div style={{ textAlign: 'right' }}>
                       <strong>{memberCounts[g.id] ?? '-'}</strong>
-                      <p style={{ margin: 0, color: '#6b7280', fontSize: '0.85rem' }}>membros</p>
+                      <p className="soft-text" style={{ margin: 0, fontSize: '0.85rem' }}>membros</p>
                     </div>
                   </Link>
                 ))}

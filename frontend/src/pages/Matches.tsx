@@ -26,9 +26,25 @@ type PredictionDraft = {
   away_score: string
 }
 
+type PredictionPayload = {
+  home_score: number
+  away_score: number
+}
+
 type StatusFilter = 'upcoming' | 'finished'
 
 const predictionDeadline = new Date('2026-06-13T18:00:00.000Z')
+
+function isPredictionLocked(match: Match) {
+  return new Date().getTime() >= new Date(match.starts_at).getTime() || match.status !== 'scheduled'
+}
+
+function getPredictionLockLabel(match: Match) {
+  if (match.status === 'live') return 'Jogo em andamento'
+  if (match.status === 'finished') return 'Jogo encerrado'
+  if (new Date().getTime() >= new Date(match.starts_at).getTime()) return 'Palpite bloqueado'
+  return ''
+}
 
 export function Matches() {
   const { user } = useAuth()
@@ -42,7 +58,7 @@ export function Matches() {
   const [predictionsOpen] = useState(() => new Date().getTime() < predictionDeadline.getTime())
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('upcoming')
   const [roundFilter, setRoundFilter] = useState<RoundFilter>('all')
-  const [hasDefaults, setHasDefaults] = useState(false)
+  const [guidedOpen, setGuidedOpen] = useState(false)
 
   const completedPredictions = useMemo(
     () => Object.values(drafts).filter((draft) => draft.home_score !== '' && draft.away_score !== '').length,
@@ -58,6 +74,11 @@ export function Matches() {
   }, [matches, roundFilter, statusFilter])
 
   const groupedMatches = useMemo(() => groupMatchesByDay(filteredMatches), [filteredMatches])
+
+  const pendingGuidedMatches = useMemo(
+    () => matches.filter((match) => predictionsOpen && !isPredictionLocked(match) && !predictions[match.id]),
+    [matches, predictions, predictionsOpen],
+  )
 
   useEffect(() => {
     if (!user) return
@@ -110,14 +131,6 @@ export function Matches() {
       setPredictions(nextPredictions)
       setDrafts(nextDrafts)
 
-      const { count } = await supabase
-        .from('default_predictions')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', currentUser.id)
-
-      if (!active) return
-      setHasDefaults((count ?? 0) > 0)
-
       setLoading(false)
     }
 
@@ -127,43 +140,6 @@ export function Matches() {
       active = false
     }
   }, [user])
-
-  async function fillWithDefaults() {
-    if (!user) return
-
-    const { data: defaults } = await supabase
-      .from('default_predictions')
-      .select('match_id, home_score, away_score')
-      .eq('user_id', user.id)
-
-    if (!defaults || defaults.length === 0) {
-      setMessage('Nenhum palpite padrao salvo. Va em Perfil para definir.')
-      return
-    }
-
-    const defaultMap = new Map(defaults.map(d => [d.match_id, d]))
-    const filled: Record<number, PredictionDraft> = {}
-
-    for (const match of matches) {
-      const current = drafts[match.id]
-      const def = defaultMap.get(match.id)
-
-      if (current?.home_score === '' && current?.away_score === '' && def) {
-        filled[match.id] = {
-          home_score: String(def.home_score),
-          away_score: String(def.away_score),
-        }
-      }
-    }
-
-    if (Object.keys(filled).length === 0) {
-      setMessage('Todos os jogos ja tem preenchimento ou nenhum padrao corresponde.')
-      return
-    }
-
-    setDrafts((current) => ({ ...current, ...filled }))
-    setMessage(`Preenchido com padrao para ${Object.keys(filled).length} jogo(s). Revise e salve.`)
-  }
 
   function updateDraft(matchId: number, field: keyof PredictionDraft, event: ChangeEvent<HTMLInputElement>) {
     const value = event.target.value
@@ -179,24 +155,18 @@ export function Matches() {
     }))
   }
 
-  async function savePrediction(match: Match) {
-    if (!user || !predictionsOpen) return
+  async function persistPrediction(match: Match, payload: PredictionPayload) {
+    if (!user || !predictionsOpen) return false
 
-    const draft = drafts[match.id]
-
-    if (!draft || draft.home_score === '' || draft.away_score === '') {
-      setMessage('Preencha os dois placares antes de salvar.')
-      return
+    if (isPredictionLocked(match)) {
+      setMessage('Este jogo ja comecou ou foi encerrado. O palpite esta bloqueado.')
+      return false
     }
 
     setSavingMatchId(match.id)
     setMessage('')
     setError('')
 
-    const payload = {
-      home_score: Number(draft.home_score),
-      away_score: Number(draft.away_score),
-    }
     const existingPrediction = predictions[match.id]
     const result = existingPrediction
       ? await supabase
@@ -215,12 +185,34 @@ export function Matches() {
 
     if (result.error) {
       setError(result.error.message)
-      return
+      return false
     }
 
     const savedPrediction = result.data as Prediction
     setPredictions((current) => ({ ...current, [match.id]: savedPrediction }))
+    setDrafts((current) => ({
+      ...current,
+      [match.id]: {
+        home_score: String(payload.home_score),
+        away_score: String(payload.away_score),
+      },
+    }))
     setMessage(`Palpite salvo: ${match.home_team} ${payload.home_score} x ${payload.away_score} ${match.away_team}`)
+    return true
+  }
+
+  async function savePrediction(match: Match) {
+    const draft = drafts[match.id]
+
+    if (!draft || draft.home_score === '' || draft.away_score === '') {
+      setMessage('Preencha os dois placares antes de salvar.')
+      return
+    }
+
+    await persistPrediction(match, {
+      home_score: Number(draft.home_score),
+      away_score: Number(draft.away_score),
+    })
   }
 
   return (
@@ -259,17 +251,25 @@ export function Matches() {
       {message && <div className="success-alert">{message}</div>}
       {error && <div className="dashboard-alert">{error}</div>}
 
-      {predictionsOpen && hasDefaults && (
-        <div style={{ width: 'min(74.5rem, 100%)', margin: '0.75rem auto', display: 'flex', justifyContent: 'flex-end' }}>
+      {predictionsOpen && pendingGuidedMatches.length > 0 && (
+        <div className="guided-entry-bar">
           <button
             className="ghost-button"
-            style={{ border: '1px solid #38d20f', color: '#38d20f', background: '#fff', cursor: 'pointer', font: 'inherit', fontWeight: 900 }}
-            onClick={fillWithDefaults}
+            onClick={() => setGuidedOpen(true)}
             type="button"
           >
-            Preencher com padrao
+            Preencher pendentes ({pendingGuidedMatches.length})
           </button>
         </div>
+      )}
+
+      {guidedOpen && (
+        <GuidedPredictionModal
+          matches={pendingGuidedMatches}
+          onClose={() => setGuidedOpen(false)}
+          onSave={persistPrediction}
+          savingMatchId={savingMatchId}
+        />
       )}
 
       {loading && <section className="games-empty">Carregando jogos...</section>}
@@ -296,7 +296,8 @@ export function Matches() {
                 {group.matches.map((match) => {
                   const draft = drafts[match.id] ?? { home_score: '', away_score: '' }
                   const prediction = predictions[match.id]
-                  const disabled = !predictionsOpen || savingMatchId === match.id
+                  const lockLabel = getPredictionLockLabel(match)
+                  const disabled = !predictionsOpen || isPredictionLocked(match) || savingMatchId === match.id
                   const home = getTeamPresentation(match.home_team)
                   const away = getTeamPresentation(match.away_team)
 
@@ -304,7 +305,7 @@ export function Matches() {
                     <article className="game-card" key={match.id}>
                       <div className="game-card-info">
                         <time>{formatMatchTime(match.starts_at)}</time>
-                        <span>{match.counts_for_pool ? 'Pontua' : 'Nao pontua'}</span>
+                        <span>{lockLabel || (match.counts_for_pool ? 'Pontua' : 'Nao pontua')}</span>
                       </div>
 
                       <div className="game-card-field">
@@ -347,7 +348,7 @@ export function Matches() {
                         <span>{getScoreLabel(match)}</span>
                         {prediction && <span>{prediction.points} pts</span>}
                         <button disabled={disabled} onClick={() => savePrediction(match)} type="button">
-                          {savingMatchId === match.id ? 'Salvando' : prediction ? 'Atualizar' : 'Salvar'}
+                          {lockLabel ? 'Bloqueado' : savingMatchId === match.id ? 'Salvando' : prediction ? 'Atualizar' : 'Salvar'}
                         </button>
                       </div>
                     </article>
@@ -359,5 +360,150 @@ export function Matches() {
         </section>
       )}
     </AppShell>
+  )
+}
+
+type GuidedPredictionModalProps = {
+  matches: Match[]
+  savingMatchId: number | null
+  onClose: () => void
+  onSave: (match: Match, payload: PredictionPayload) => Promise<boolean>
+}
+
+function GuidedPredictionModal({ matches, savingMatchId, onClose, onSave }: GuidedPredictionModalProps) {
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [activeSide, setActiveSide] = useState<keyof PredictionDraft>('home_score')
+  const [score, setScore] = useState<PredictionDraft>({ home_score: '', away_score: '' })
+
+  const safeIndex = Math.min(currentIndex, Math.max(0, matches.length - 1))
+  const currentMatch = matches[safeIndex]
+  const home = currentMatch ? getTeamPresentation(currentMatch.home_team) : null
+  const away = currentMatch ? getTeamPresentation(currentMatch.away_team) : null
+  const canGoNext = score.home_score !== '' && score.away_score !== '' && !!currentMatch
+  const saving = !!currentMatch && savingMatchId === currentMatch.id
+
+  function resetEntry() {
+    setScore({ home_score: '', away_score: '' })
+    setActiveSide('home_score')
+  }
+
+  if (!currentMatch || !home || !away) return null
+
+  function pressDigit(digit: string) {
+    setScore((current) => {
+      const nextValue = `${current[activeSide]}${digit}`.slice(0, 2)
+      const next = { ...current, [activeSide]: nextValue }
+
+      if (activeSide === 'home_score' && current.home_score === '') {
+        window.setTimeout(() => setActiveSide('away_score'), 0)
+      }
+
+      return next
+    })
+  }
+
+  function backspace() {
+    setScore((current) => ({
+      ...current,
+      [activeSide]: current[activeSide].slice(0, -1),
+    }))
+  }
+
+  function clearActive() {
+    setScore((current) => ({ ...current, [activeSide]: '' }))
+  }
+
+  function skipMatch() {
+    resetEntry()
+
+    if (safeIndex >= matches.length - 1) {
+      onClose()
+      return
+    }
+
+    setCurrentIndex((current) => current + 1)
+  }
+
+  async function saveAndNext() {
+    if (!canGoNext || saving) return
+
+    const saved = await onSave(currentMatch, {
+      home_score: Number(score.home_score),
+      away_score: Number(score.away_score),
+    })
+
+    if (!saved) return
+
+    if (matches.length <= 1) {
+      onClose()
+    } else {
+      resetEntry()
+    }
+  }
+
+  const keypad = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
+
+  return (
+    <div className="guided-modal-backdrop" role="presentation">
+      <section className="guided-modal" aria-labelledby="guided-title" role="dialog" aria-modal="true">
+        <header className="guided-modal-header">
+          <div>
+            <p className="eyebrow">Palpite guiado</p>
+            <h2 id="guided-title">Partida {safeIndex + 1} de {matches.length}</h2>
+          </div>
+          <button aria-label="Fechar palpite guiado" className="guided-close" onClick={onClose} type="button">
+            ×
+          </button>
+        </header>
+
+        <p className="guided-match-time">{formatMatchTime(currentMatch.starts_at)} · {currentMatch.counts_for_pool ? 'Pontua' : 'Nao pontua'}</p>
+
+        <div className="guided-scoreboard">
+          <button
+            className={`guided-team ${activeSide === 'home_score' ? 'active' : ''}`}
+            onClick={() => setActiveSide('home_score')}
+            type="button"
+          >
+            {home.flagCode ? <img alt="" src={`https://flagcdn.com/w80/${home.flagCode}.png`} /> : <span className="flag-fallback" />}
+            <span>{home.code}</span>
+            <strong>{score.home_score || '-'}</strong>
+          </button>
+
+          <span className="guided-versus">x</span>
+
+          <button
+            className={`guided-team ${activeSide === 'away_score' ? 'active' : ''}`}
+            onClick={() => setActiveSide('away_score')}
+            type="button"
+          >
+            {away.flagCode ? <img alt="" src={`https://flagcdn.com/w80/${away.flagCode}.png`} /> : <span className="flag-fallback" />}
+            <span>{away.code}</span>
+            <strong>{score.away_score || '-'}</strong>
+          </button>
+        </div>
+
+        <p className="guided-active-hint">
+          Digitando gols de <strong>{activeSide === 'home_score' ? currentMatch.home_team : currentMatch.away_team}</strong>
+        </p>
+
+        <div className="guided-keypad" aria-label="Teclado numerico de gols">
+          {keypad.map((digit) => (
+            <button key={digit} onClick={() => pressDigit(digit)} type="button">
+              {digit}
+            </button>
+          ))}
+          <button className="guided-keypad-secondary" onClick={clearActive} type="button">Limpar</button>
+          <button onClick={() => pressDigit('0')} type="button">0</button>
+          <button className="guided-keypad-secondary" onClick={backspace} type="button">←</button>
+        </div>
+
+        <footer className="guided-modal-footer">
+          <button className="ghost-button" onClick={skipMatch} type="button">Pular</button>
+          <button className="hero-cta" disabled={!canGoNext || saving} onClick={saveAndNext} type="button">
+            {saving ? 'Salvando...' : matches.length <= 1 ? 'Finalizar' : 'Proximo'}
+          </button>
+        </footer>
+      </section>
+    </div>
   )
 }
